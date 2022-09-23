@@ -17,7 +17,7 @@ spike_args['decay'] = utils.args.decay
 
 
 class Net(torch.nn.Module):
-    def __init__(self, args, inputsize, taskcla, nlab, nlayers=3, nhid=40):
+    def __init__(self, args, inputsize, taskcla, nlab, nhid=40, nlayers=3):
         super(Net, self).__init__()
 
         self.spike_window = args.spike_windows

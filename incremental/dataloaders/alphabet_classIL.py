@@ -9,7 +9,7 @@ from tqdm import tqdm
 class Alphabet(Dataset):
     def __init__(self, train_or_test, transform=None, target_transform=None):
         super(Alphabet, self).__init__()
-        roots = '../../../Dataset/alphabet'
+        roots = '../../Dataset/alphabet'
         with open(os.path.join(roots, 'train_alphabet.pkl'), 'rb') as f:
             data_train = pickle.load(f)
         with open(os.path.join(roots, 'test_alphabet.pkl'), 'rb') as f:

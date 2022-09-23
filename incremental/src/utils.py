@@ -92,8 +92,12 @@ def fisher_matrix_diag(t, x, y, model, criterion, sbatch=20):
         target = torch.autograd.Variable(y[b], volatile=False)
         # Forward and backward
         model.zero_grad()
-        outputs = model.forward(images)
-        loss = criterion(t, outputs[t], target)
+        outputs = model.forward(images, t)
+        if args.multi_output:
+            output = outputs[t]
+        else:
+            output = outputs
+        loss = criterion(t, output, target)
         loss.backward()
         # Get gradients
         for n, p in model.named_parameters():

@@ -9,7 +9,7 @@ from tqdm import tqdm
 class Mathgreek(Dataset):
     def __init__(self, train_or_test, transform=None, target_transform=None):
         super(Mathgreek, self).__init__()
-        roots = '../../../Dataset/mathgreek'
+        roots = '../../Dataset/mathgreek'
         with open(os.path.join(roots, 'train_mathgreek_erode4.pkl'), 'rb') as f:
             data_train = pickle.load(f)
         with open(os.path.join(roots, 'test_mathgreek_erode4.pkl'), 'rb') as f:

@@ -13,7 +13,7 @@ spike_args = {}
 
 
 class Net(torch.nn.Module):
-    def __init__(self, args, inputsize, taskcla, nlab, nlayers=3, nhid=40, pdrop1=0, pdrop2=0):
+    def __init__(self, args, inputsize, taskcla, nlab, nhid=40, nlayers=3):
         super(Net, self).__init__()
 
         self.args = args

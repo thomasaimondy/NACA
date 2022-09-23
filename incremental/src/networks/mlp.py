@@ -3,7 +3,7 @@ import torch
 
 
 class Net(torch.nn.Module):
-    def __init__(self, args, inputsize, taskcla, nhid, nlayers=1):
+    def __init__(self, args, inputsize, taskcla, labsize, nhid, nlayers=1):
         super(Net, self).__init__()
 
         ncha, size, size2 = inputsize
@@ -27,7 +27,7 @@ class Net(torch.nn.Module):
                 self.last = torch.nn.Linear(nhid, n)
         return
 
-    def forward(self, x):
+    def forward(self, x, t):
         u = x.view(x.size(0), -1)
 
         u = self.drop(self.act(self.fc1(u)))
@@ -36,11 +36,9 @@ class Net(torch.nn.Module):
         if self.nlayers > 2:
             u = self.drop(self.act(self.fc3(u)))
 
-        y = []
-        for t, i in self.taskcla:
-            if self.args.multi_output:
-                y.append(self.last[t](u))
-            else:
-                y.append(self.last(u))
+        if self.args.multi_output:
+            y = self.last[t](u)
+        else:
+            y = self.last(u)
 
         return y

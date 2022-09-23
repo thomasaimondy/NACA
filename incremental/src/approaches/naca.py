@@ -36,8 +36,6 @@ class Appr(object):
         self.optimizer = self._get_optimizer(lr)
 
         # Loop epochs
-        ytrain = torch.zeros(ytrain.shape[0], self.nlab).cuda().scatter_(1, ytrain.unsqueeze(1).long(), 1.0).cuda()
-        yvalid = torch.zeros(yvalid.shape[0], self.nlab).cuda().scatter_(1, yvalid.unsqueeze(1).long(), 1.0).cuda()
         for e in range(self.nepochs):
             # Train
             clock0 = time.time()
@@ -84,11 +82,12 @@ class Appr(object):
                 b = r[i:i + self.sbatch]
             else:
                 b = r[i:]
-            images = torch.autograd.Variable(x[b], volatile=False)
-            targets = torch.autograd.Variable(y[b], volatile=False)
-            task = torch.autograd.Variable(torch.LongTensor([t]).cuda(), volatile=False)
+            with torch.no_grad():
+                images = torch.autograd.Variable(x[b])
+                target = torch.autograd.Variable(y[b])
+                targets = torch.zeros(images.shape[0], self.nlab).to(target.device).scatter_(1, target.unsqueeze(1).long(), 1.0)
             # Forward
-            self.model.forward(task, images, targets)
+            self.model.forward(t, images, targets)
 
             # Apply step
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clipgrad)
@@ -113,15 +112,18 @@ class Appr(object):
                 b = r[i:]
             with torch.no_grad():
                 images = torch.autograd.Variable(x[b])
-                targets = torch.autograd.Variable(y[b])
-                task = torch.autograd.Variable(torch.LongTensor([t]).cuda())
+                target = torch.autograd.Variable(y[b])
 
             # Forward
-            output, _ = self.model.forward(task, images, None)
+            outputs, _ = self.model.forward(t, images, None)
+            if utils.args.multi_output:
+                output = outputs[t]
+            else:
+                output = outputs
+            targets = torch.zeros_like(output).to(target.device).scatter_(1, target.unsqueeze(1).long(), 1.0)
             loss = self.criterion(output, targets)
             _, pred = output.max(1)
-            targets = targets.max(1)[1]
-            hits = (pred == targets).float()
+            hits = (pred == target).float()
 
             # Log
             total_loss += loss.data.item() * len(b)

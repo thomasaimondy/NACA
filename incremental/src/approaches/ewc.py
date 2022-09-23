@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 import torch
@@ -7,10 +8,11 @@ import utils
 
 class Appr(object):
     """ Class implementing the Elastic Weight Consolidation approach described in http://arxiv.org/abs/1612.00796 """
-    def __init__(self, model, nepochs=100, sbatch=64, lr=0.05, lr_min=1e-3, lr_factor=3, lr_patience=5, clipgrad=100, lamb=5e4, args=None):
+    def __init__(self, model, nlab, nepochs=100, sbatch=64, lr=0.05, lr_min=1e-3, lr_factor=3, lr_patience=5, clipgrad=100, lamb=5e4, args=None):
         self.model = model
         self.model_old = None
         self.fisher = None
+        self.nlab = nlab
 
         self.nepochs = nepochs
         self.sbatch = sbatch
@@ -19,7 +21,7 @@ class Appr(object):
         self.lr_factor = lr_factor
         self.lr_patience = lr_patience
         self.clipgrad = clipgrad
-
+        self.mse = torch.nn.MSELoss()
         self.ce = torch.nn.CrossEntropyLoss()
         self.optimizer = self._get_optimizer()
         self.lamb = lamb
@@ -29,6 +31,15 @@ class Appr(object):
             self.lamb = float(params[0])
 
         return
+
+    def get_weights_copy(self, model):
+        weights_path = 'weights_temp{}.pt'.format(os.getpid())
+        torch.save(model, weights_path)
+        print('save:', weights_path)
+        load = torch.load(weights_path)
+        os.remove(weights_path)
+        print('remove:', weights_path)
+        return load
 
     def _get_optimizer(self, lr=None):
         if lr is None: lr = self.lr
@@ -77,7 +88,12 @@ class Appr(object):
         utils.set_model_(self.model, best_model)
 
         # Update old
-        self.model_old = deepcopy(self.model)
+        if utils.args.approach == 'ewc':
+            self.model_old = deepcopy(self.model)
+        else:
+            ytrain = torch.zeros(ytrain.shape[0], self.nlab).to(ytrain.device).scatter_(1, ytrain.unsqueeze(1).long(), 1.0)
+            self.model_old = self.get_weights_copy(self.model)
+            
         self.model_old.eval()
         utils.freeze_model(self.model_old)  # Freeze the weights
 
@@ -88,9 +104,8 @@ class Appr(object):
                 fisher_old[n] = self.fisher[n].clone()
         self.fisher = utils.fisher_matrix_diag(t, xtrain, ytrain, self.model, self.criterion)
         if t > 0:
-            # Watch out! We do not want to keep t models (or fisher diagonals) in memory, therefore we have to merge fisher diagonals
             for n, _ in self.model.named_parameters():
-                self.fisher[n] = 0.5 * (self.fisher[n] + fisher_old[n])
+                self.fisher[n] = (self.fisher[n] + fisher_old[n] * t) / (t + 1)
 
         return 1, 2
 
@@ -105,13 +120,20 @@ class Appr(object):
         for i in range(0, len(r), self.sbatch):
             if i + self.sbatch <= len(r): b = r[i:i + self.sbatch]
             else: b = r[i:]
-            images = torch.autograd.Variable(x[b], volatile=False)
-            targets = torch.autograd.Variable(y[b], volatile=False)
-
+            with torch.no_grad():
+                images = torch.autograd.Variable(x[b])
+                targets = torch.autograd.Variable(y[b])
             # Forward current model
-            outputs = self.model.forward(images)
-            output = outputs[t]
-            loss = self.criterion(t, output, targets)
+            outputs = self.model.forward(images, t)
+            if utils.args.multi_output:
+                output = outputs[t]
+            else:
+                output = outputs
+            if utils.args.approach == 'ewc':
+                target = targets
+            else:
+                target = torch.zeros_like(output).to(targets.device).scatter_(1, targets.unsqueeze(1).long(), 1.0)
+            loss = self.criterion(t, output, target)
 
             # Backward
             self.optimizer.zero_grad()
@@ -134,13 +156,21 @@ class Appr(object):
         for i in range(0, len(r), self.sbatch):
             if i + self.sbatch <= len(r): b = r[i:i + self.sbatch]
             else: b = r[i:]
-            images = torch.autograd.Variable(x[b], volatile=True)
-            targets = torch.autograd.Variable(y[b], volatile=True)
+            with torch.no_grad():
+                images = torch.autograd.Variable(x[b])
+                targets = torch.autograd.Variable(y[b])
 
             # Forward
-            outputs = self.model.forward(images)
-            output = outputs[t]
-            loss = self.criterion(t, output, targets)
+            outputs = self.model.forward(images, t)
+            if utils.args.multi_output:
+                output = outputs[t]
+            else:
+                output = outputs
+            if utils.args.approach == 'ewc':
+                target = targets
+            else:
+                target = torch.zeros_like(output).to(targets.device).scatter_(1, targets.unsqueeze(1).long(), 1.0)
+            loss = self.criterion(t, output, target)
             _, pred = output.max(1)
             hits = (pred == targets).float()
 
@@ -157,5 +187,7 @@ class Appr(object):
         if t > 0:
             for (name, param), (_, param_old) in zip(self.model.named_parameters(), self.model_old.named_parameters()):
                 loss_reg += torch.sum(self.fisher[name] * (param_old - param).pow(2)) / 2
-
-        return self.ce(output, targets) + self.lamb * loss_reg
+        if utils.args.approach == 'ewc':
+            return self.ce(output, targets) + self.lamb * loss_reg
+        else:
+            return self.mse(output, targets) + self.lamb * loss_reg

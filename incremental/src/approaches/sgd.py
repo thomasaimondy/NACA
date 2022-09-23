@@ -1,16 +1,13 @@
 import time
 import numpy as np
 import torch
-from tqdm import tqdm
 import utils
-
-torch.autograd.set_detect_anomaly(True)
 
 
 class Appr(object):
-    def __init__(self, model, nlab, nepochs=100, sbatch=16, lr=0.01, lr_min=5e-4, lr_factor=1, lr_patience=5, clipgrad=10000, args=None):
+    def __init__(self, model, nlab, nepochs=100, sbatch=64, lr=0.05, lr_min=1e-3, lr_factor=1, lr_patience=5, clipgrad=10000, args=None):
         self.model = model
-        self.args = args
+
         self.nepochs = nepochs
         self.sbatch = sbatch
         self.lr = lr
@@ -19,7 +16,8 @@ class Appr(object):
         self.lr_patience = lr_patience
         self.clipgrad = clipgrad
         self.nlab = nlab
-        self.mse = torch.nn.MSELoss()
+
+        self.criterion = torch.nn.MSELoss()
         self.optimizer = self._get_optimizer()
 
         return
@@ -36,14 +34,12 @@ class Appr(object):
         self.optimizer = self._get_optimizer(lr)
 
         # Loop epochs
-        ytrain = torch.zeros(ytrain.shape[0], self.nlab).cuda().scatter_(1, ytrain.unsqueeze(1).long(), 1.0).cuda()
-        yvalid = torch.zeros(yvalid.shape[0], self.nlab).cuda().scatter_(1, yvalid.unsqueeze(1).long(), 1.0).cuda()
         for e in range(self.nepochs):
             # Train
             clock0 = time.time()
             self.train_epoch(t, xtrain, ytrain)
             clock1 = time.time()
-            train_loss, train_acc = 0, 0
+            train_loss, train_acc = self.eval(t, xtrain, ytrain)
             clock2 = time.time()
             print('| Epoch {:3d}, time={:5.1f}ms/{:5.1f}ms | Train: loss={:.3f}, acc={:5.1f}% |'.format(e + 1, 1000 * self.sbatch * (clock1 - clock0) / xtrain.size(0), 1000 * self.sbatch * (clock2 - clock1) / xtrain.size(0), train_loss, 100 * train_acc), end='')
             # Valid
@@ -64,11 +60,14 @@ class Appr(object):
                     patience = self.lr_patience
                     self.optimizer = self._get_optimizer(lr)
             print()
-            ## thomas ,quick training
             if valid_acc > 0.95:
                 break
+
         utils.epoch.append(e)
+        # Restore best
         utils.set_model_(self.model, best_model)
+
+        return 1, 2
 
     def train_epoch(self, t, x, y):
         self.model.train()
@@ -78,22 +77,29 @@ class Appr(object):
         r = torch.LongTensor(r).cuda()
 
         # Loop batches
-        for i in tqdm(range(0, len(r), self.sbatch)):
-            if i + self.sbatch <= len(r):
-                b = r[i:i + self.sbatch]
-            else:
-                b = r[i:]
-            images = torch.autograd.Variable(x[b], volatile=False)
-            targets = torch.autograd.Variable(y[b], volatile=False)
-            task = torch.autograd.Variable(torch.LongTensor([t]).cuda(), volatile=False)
+        for i in range(0, len(r), self.sbatch):
+            if i + self.sbatch <= len(r): b = r[i:i + self.sbatch]
+            else: b = r[i:]
+            with torch.no_grad():
+                images = torch.autograd.Variable(x[b])
+                targets = torch.autograd.Variable(y[b])
+
             # Forward
-            self.model.forward(task, images, targets)
+            outputs = self.model.forward(images, t)
+            if utils.args.multi_output:
+                output = outputs[t]
+            else:
+                output = outputs
+            targets = torch.zeros_like(output).to(targets.device).scatter_(1, targets.unsqueeze(1).long(), 1.0)
+            loss = self.criterion(output, targets)
 
-            # Apply step
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clipgrad)
-
-            self.optimizer.step()
+            # Backward
             self.optimizer.zero_grad()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clipgrad)
+            self.optimizer.step()
+
+        return
 
     def eval(self, t, x, y):
         total_loss = 0
@@ -106,28 +112,26 @@ class Appr(object):
 
         # Loop batches
         for i in range(0, len(r), self.sbatch):
-            if i + self.sbatch <= len(r):
-                b = r[i:i + self.sbatch]
-            else:
-                b = r[i:]
+            if i + self.sbatch <= len(r): b = r[i:i + self.sbatch]
+            else: b = r[i:]
             with torch.no_grad():
                 images = torch.autograd.Variable(x[b])
-                targets = torch.autograd.Variable(y[b])
-                task = torch.autograd.Variable(torch.LongTensor([t]).cuda())
+                target = torch.autograd.Variable(y[b])
 
             # Forward
-            output, _ = self.model.forward(task, images, None)
+            outputs = self.model.forward(images, t)
+            if utils.args.multi_output:
+                output = outputs[t]
+            else:
+                output = outputs
+            targets = torch.zeros_like(output).to(target.device).scatter_(1, target.unsqueeze(1).long(), 1.0)
             loss = self.criterion(output, targets)
             _, pred = output.max(1)
-            targets = targets.max(1)[1]
-            hits = (pred == targets).float()
+            hits = (pred == target).float()
 
             # Log
-            total_loss += loss.data.item() * len(b)
-            total_acc += hits.sum().data.item()
+            total_loss += loss.data.cpu().numpy().item() * len(b)
+            total_acc += hits.sum().data.cpu().numpy().item()
             total_num += len(b)
 
         return total_loss / total_num, total_acc / total_num
-
-    def criterion(self, outputs, targets):
-        return self.mse(outputs, targets)

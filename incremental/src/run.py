@@ -3,7 +3,6 @@ import numpy as np
 import torch
 import utils
 import time
-
 sys.path.append('..')
 
 tstart = time.time()
@@ -16,7 +15,7 @@ parser.add_argument('--experiment', default='mnist_classIL', type=str, required=
 parser.add_argument('--approach', default='naca', type=str, required=False, choices=['sgd', 'ewc', 'naca', 'sgdsnn', 'ewcsnn', 'nacasnn'])
 parser.add_argument('--output', default='', type=str, required=False)
 parser.add_argument('--nepochs', default=100, type=int, required=False)
-parser.add_argument('--lr', default=5e-5, type=float, required=False) # 5e-4 is the best parameters for nacasnn in MNIST dataset
+parser.add_argument('--lr', default=5e-4, type=float, required=False) # 5e-4 is the best parameters for nacasnn in MNIST dataset
 parser.add_argument('--lr_factor', default=1, type=float, required=False)
 parser.add_argument('--parameter', type=str, default='')
 parser.add_argument('--gpu', type=str, default='0', help='Number of used gpu')
@@ -32,7 +31,7 @@ parser.add_argument('--decay', type=float, default=0.2, help='Decay time constan
 parser.add_argument('--spike_windows', type=int, default=20)
 # Parameters for NACA
 parser.add_argument('--bias', type=float, default=None, help='Between the maximum and minimum input value')
-parser.add_argument('--delta_bias', type=float, default=0.15, help='Avoid the zero during training') # 0.2 is the best parameter for naca in MNIST dataset
+parser.add_argument('--delta_bias', type=float, default=0.2, help='Avoid the zero during training') # 0.2 is the best parameter for naca in MNIST dataset
 parser.add_argument('--lambda_inv', type=int, default=0.5)
 parser.add_argument('--theta_max', type=int, default=1.2)
 parser.add_argument('--distribution', type=str, default='uniform', required=False, choices=['uniform', 'normal', 'beta'])
@@ -98,13 +97,13 @@ elif args.approach == 'naca':
     from approaches import naca as approach
     from networks import mlp_naca as network
 elif args.approach == 'sgdsnn':
-    from approaches import sgdsnn as approach
+    from approaches import sgd as approach
     from networks import mlp_snn as network
 elif args.approach == 'ewcsnn':
-    from approaches import ewcsnn as approach
+    from approaches import ewc as approach
     from networks import mlp_snn as network
 elif args.approach == 'nacasnn':
-    from approaches import nacasnn as approach
+    from approaches import naca as approach
     from networks import mlp_naca_snn as network
 
 # Load
@@ -114,12 +113,8 @@ print('Input size =', inputsize, '\nTask info =', taskcla)
 
 # Inits
 print('Inits...')
-if args.approach in ['naca', 'nacasnn']:
-    net = network.Net(args, inputsize, taskcla, labsize, nhid=args.nhid, nlayers=args.nlayers).cuda()
-    appr = approach.Appr(net, labsize, nepochs=args.nepochs, lr=args.lr, lr_factor=args.lr_factor, args=args, sbatch=args.sbatch)
-else:
-    net = network.Net(args, inputsize, taskcla, nhid=args.nhid, nlayers=args.nlayers).cuda()
-    appr = approach.Appr(net, nepochs=args.nepochs, lr=args.lr, args=args, sbatch=args.sbatch, lr_factor=args.lr_factor)
+net = network.Net(args, inputsize, taskcla, labsize, nhid=args.nhid, nlayers=args.nlayers).cuda()
+appr = approach.Appr(net, labsize, nepochs=args.nepochs, lr=args.lr, lr_factor=args.lr_factor, args=args, sbatch=args.sbatch)
 
 print(appr.criterion)
 utils.print_optimizer_config(appr.optimizer)
@@ -155,8 +150,6 @@ for t, ncla in taskcla:
     for u in range(t + 1):
         xtest = data[u]['test']['x'].cuda()
         ytest = data[u]['test']['y'].cuda()
-        if args.approach in ['naca', 'nacasnn']:
-            ytest = torch.zeros(ytest.shape[0], labsize).cuda().scatter_(1, ytest.unsqueeze(1).long(), 1.0).cuda()
         test_loss, test_acc = appr.eval(u, xtest, ytest)
         print('>>> Test on task {:2d} - {:15s}: loss={:.3f}, acc={:5.1f}% <<<'.format(u, data[u]['name'], test_loss, 100 * test_acc))
         acc[t, u] = test_acc

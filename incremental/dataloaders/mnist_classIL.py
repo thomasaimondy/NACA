@@ -6,57 +6,59 @@ from torchvision import datasets, transforms
 def get(mini=False, fixed_order=False):
     data = {}
     taskcla = []
-    size = [3, 32, 32]
+    size = [1, 28, 28]
     labelsize = 10  #2
     seeds = np.array(list(range(labelsize)), dtype=int)
     if not fixed_order:
         np.random.shuffle(seeds)
     print(seeds)
 
-    mean = [x / 255 for x in [125.3, 123.0, 113.9]]
-    std = [x / 255 for x in [63.0, 62.1, 66.7]]
+    # MNIST
+    mean = (0.1307, )
+    std = (0.3081, )
     dat = {}
+    roots = '../../Dataset'
+    dat['train'] = datasets.MNIST(roots + '/', train=True, download=True, transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean, std)]))
+    dat['test'] = datasets.MNIST(roots + '/', train=False, download=True, transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean, std)]))
 
-    dat['train'] = datasets.CIFAR10('../../../Dataset/cifar10/', train=True, download=True, transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean, std)]))
-    dat['test'] = datasets.CIFAR10('../../../Dataset/cifar10/', train=False, download=True, transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean, std)]))
     data[0] = {}
-    data[0]['name'] = 'cifar10-{}'.format(seeds[0])
+    data[0]['name'] = 'mnist-{}'.format(seeds[0])
     data[0]['ncla'] = 10
 
     data[1] = {}
-    data[1]['name'] = 'cifar10-{}'.format(seeds[1])
+    data[1]['name'] = 'mnist-{}'.format(seeds[1])
     data[1]['ncla'] = 10
 
     data[2] = {}
-    data[2]['name'] = 'cifar10-{}'.format(seeds[2])
+    data[2]['name'] = 'mnist-{}'.format(seeds[2])
     data[2]['ncla'] = 10
 
     data[3] = {}
-    data[3]['name'] = 'cifar10-{}'.format(seeds[3])
+    data[3]['name'] = 'mnist-{}'.format(seeds[3])
     data[3]['ncla'] = 10
 
     data[4] = {}
-    data[4]['name'] = 'cifar10-{}'.format(seeds[4])
+    data[4]['name'] = 'mnist-{}'.format(seeds[4])
     data[4]['ncla'] = 10
 
     data[5] = {}
-    data[5]['name'] = 'cifar10-{}'.format(seeds[5])
+    data[5]['name'] = 'mnist-{}'.format(seeds[5])
     data[5]['ncla'] = 10
 
     data[6] = {}
-    data[6]['name'] = 'cifar10-{}'.format(seeds[6])
+    data[6]['name'] = 'mnist-{}'.format(seeds[6])
     data[6]['ncla'] = 10
 
     data[7] = {}
-    data[7]['name'] = 'cifar10-{}'.format(seeds[7])
+    data[7]['name'] = 'mnist-{}'.format(seeds[7])
     data[7]['ncla'] = 10
 
     data[8] = {}
-    data[8]['name'] = 'cifar10-{}'.format(seeds[8])
+    data[8]['name'] = 'mnist-{}'.format(seeds[8])
     data[8]['ncla'] = 10
 
     data[9] = {}
-    data[9]['name'] = 'cifar10-{}'.format(seeds[9])
+    data[9]['name'] = 'mnist-{}'.format(seeds[9])
     data[9]['ncla'] = 10
 
     for s in ['train', 'test']:

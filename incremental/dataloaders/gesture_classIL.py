@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 class Gesture_pre(Dataset):
     def __init__(self, train_or_test, transform=None, target_transform=None):
         super(Gesture_pre, self).__init__()
-        roots = '../../../Dataset/DVSGesture'
+        roots = '../../Dataset/DVSGesture'
         labels = []
         datas = []
         timeStamp = os.stat(roots).st_mtime

@@ -11,7 +11,7 @@ spike_args['decay'] = utils.args.decay
 
 
 class Net(torch.nn.Module):
-    def __init__(self, args, inputsize, taskcla, nhid, nlayers=1):
+    def __init__(self, args, inputsize, taskcla, labsize, nhid,nlayers=1):
         super(Net, self).__init__()
 
         ncha, size, size2 = inputsize
@@ -61,6 +61,7 @@ class SpikeLinear(torch.nn.Module):
     def __init__(self, args, in_features, out_features, bias=True):
         super(SpikeLinear, self).__init__()
         self.args = args
+        self.out_features = out_features
         self.fc = torch.nn.Linear(in_features, out_features, bias=bias)
         self.mem = torch.zeros((args.sbatch, out_features)).to(self.fc.weight.device)
         self.spike = torch.zeros((args.sbatch, out_features)).to(self.fc.weight.device)
