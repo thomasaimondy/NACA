@@ -1,0 +1,55 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "run.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args":
+                [
+                    // MNIST
+                    // "--gpu", "0", "--lr", "5e-4", "--approach", "naca", "--nhid", "1000", "--nepochs", "10", "--experiment", "mnist_classIL", "--nlayers", "1", "--sbatch", "256", "--lr_factor", "1", "--output", "xxxx", "--seed", "3", "--NI_type", "Uniform", "--delta_alpha", "0.15"
+
+                    // "--gpu", "0", "--lr", "5e-4", "--approach", "sgd", "--nhid", "1000", "--nepochs", "10", "--experiment", "mnist_classIL", "--nlayers", "1", "--sbatch", "256", "--lr_factor", "1", "--output", "xxx", "--seed", "1", "--NI_type", "Uniform"
+
+                    // "--gpu", "0", "--lr", "5e-4", "--approach", "ewc", "--nhid", "1000", "--nepochs", "10", "--experiment", "mnist_classIL", "--nlayers", "1", "--sbatch", "256", "--lr_factor", "1", "--output", "xxx", "--seed", "1", "--NI_type", "Uniform"
+                    
+                    //alpha_beta
+                    // "--gpu", "0", "--lr", "5e-4", "--approach", "naca", "--nhid", "1000", "--nepochs", "10", "--experiment", "alphabet_classIL", "--nlayers", "1", "--sbatch", "256", "--lr_factor", "1", "--output", "xxx", "--seed", "1", "--NI_type", "Uniform", "--delta_alpha", "0.15"
+
+                    // "--gpu", "0", "--lr", "5e-4", "--approach", "sgd", "--nhid", "1000", "--nepochs", "10", "--experiment", "alphabet_classIL", "--nlayers", "1", "--sbatch", "256", "--lr_factor", "1", "--output", "xxx", "--seed", "1", "--NI_type", "Uniform", "--delta_alpha", "0.15"
+
+                    //alpha_beta
+                    // "--gpu", "0", "--lr", "5e-5", "--approach", "naca", "--nhid", "1000", "--nepochs", "100", "--experiment", "alphabet_classIL", "--nlayers", "1", "--sbatch", "256", "--lr_factor", "1", "--output", "alpha_beta", "--seed", "5", "--NI_type", "Uniform", "--alpha", "0.2"
+
+                    //mathgreek
+                    // "--gpu", "0", "--lr", "5e-4", "--approach", "naca", "--nhid", "1000", "--nepochs", "20", "--experiment", "mathgreek_classIL", "--nlayers", "1", "--sbatch", "32", "--lr_factor", "1", "--output", "xxx", "--seed", "0", "--NI_type", "Uniform", "--alpha", "0.8"
+
+                    // "--gpu", "0", "--lr", "5e-4", "--approach", "sgd", "--nhid", "3000", "--nepochs", "100", "--experiment", "mathgreek_classIL", "--nlayers", "1", "--sbatch", "16", "--lr_factor", "1", "--output", "xxx", "--seed", "0", "--NI_type", "Uniform", "--delta_alpha", "0.5"
+
+                    // "--gpu", "0", "--lr", "5e-4", "--approach", "ewc", "--nhid", "3000", "--nepochs", "100", "--experiment", "mathgreek_classIL", "--nlayers", "1", "--sbatch", "16", "--lr_factor", "1", "--output", "xxx", "--seed", "0", "--NI_type", "Uniform", "--delta_alpha", "0.5"
+
+                    //cifar10
+                    // "--gpu", "3", "--lr", "5e-4", "--approach", "naca", "--nhid", "4000", "--nepochs", "100", "--experiment", "cifar_classIL", "--nlayers", "1", "--sbatch", "256", "--lr_factor", "1", "--output", "alpha_beta", "--seed", "5", "--NI_type", "Uniform", "--delta_alpha", "0.1"
+
+                    // "--gpu", "0", "--lr", "5e-5", "--approach", "sgd", "--nhid", "1000", "--nepochs", "100", "--experiment", "cifar_classIL", "--nlayers", "1", "--sbatch", "256", "--lr_factor", "1", "--output", "alpha_beta", "--seed", "5", "--NI_type", "Uniform", "--delta_alpha", "0.3"
+
+                    //dvsgesture
+                    "--gpu", "0", "--lr", "5e-3", "--approach", "naca", "--nhid", "3000", "--nepochs", "100", "--experiment", "gesture_classIL", "--nlayers", "1", "--sbatch", "16", "--lr_factor", "1", "--output", "xxx", "--seed", "0", "--NI_type", "Uniform", "--delta_alpha", "0.24"
+
+                    // "--gpu", "0", "--lr", "5e-3", "--approach", "sgd", "--nhid", "1000", "--nepochs", "100", "--experiment", "gesture_classIL", "--nlayers", "1", "--sbatch", "16", "--lr_factor", "1", "--output", "xxx", "--seed", "5", "--NI_type", "Uniform"
+
+                    // "--gpu", "0", "--lr", "5e-3", "--approach", "ewc", "--nhid", "1000", "--nepochs", "100", "--experiment", "gesture_classIL", "--nlayers", "1", "--sbatch", "16", "--lr_factor", "1", "--output", "xxx", "--seed", "5", "--NI_type", "Uniform"
+
+                    //cifar100
+                    // "--gpu", "0", "--lr", "5e-4", "--approach", "naca", "--nhid", "4000", "--nepochs", "10", "--experiment", "cifar100_classIL", "--nlayers", "1", "--sbatch", "256", "--lr_factor", "1", "--output", "xxx", "--seed", "0", "--NI_type", "Uniform", "--delta_alpha", "0.1"
+                ]
+        }
+    ]
+}

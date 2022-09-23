@@ -1,0 +1,45 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "run.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args":
+                [   
+                    // MNIST
+                    // "--gpu", "0", "--lr", "5e-4", "--approach", "nacasnn", "--nhid", "1000", "--nepochs", "100", "--experiment", "mnist_classIL", "--nlayers", "1", "--sbatch", "256", "--lr_factor", "1", "--output", "xxx", "--seed", "4", "--NI_type", "Uniform", "--spike_windows", "20", "--delta_alpha", "0.2", "--thresh", "0.5", "--lens", "0.2"//, "--delta_alpha", "0.1"
+
+                    // "--gpu", "0", "--lr", "5e-4", "--approach", "ewcsnn", "--nhid", "1000", "--nepochs", "10", "--experiment", "mnist_classIL", "--nlayers", "1", "--sbatch", "256", "--lr_factor", "1", "--output", "xxx", "--seed", "2", "--NI_type", "Uniform", "--delta_alpha", "0.2", "--spike_windows", "20"
+
+                    // "--gpu", "1", "--lr", "5e-4", "--approach", "sgdsnn", "--nhid", "1000", "--nepochs", "100", "--experiment", "mnist_classIL", "--nlayers", "1", "--sbatch", "256", "--lr_factor", "1", "--output", "xxx", "--seed", "1", "--NI_type", "Uniform", "--alpha", "1.7", "--spike_windows", "20"
+
+                    // "--gpu", "1", "--lr", "5e-4", "--approach", "ewcsnn", "--nhid", "1000", "--nepochs", "100", "--experiment", "mnist_classIL", "--nlayers", "1", "--sbatch", "256", "--lr_factor", "1", "--output", "xxx", "--seed", "1", "--NI_type", "Uniform", "--alpha", "1.7", "--spike_windows", "20"
+
+                    // alphabet
+                    // "--gpu", "0", "--lr", "5e-4", "--approach", "nacasnn", "--nhid", "1000", "--nepochs", "100", "--experiment", "alphabet_classIL", "--nlayers", "1", "--sbatch", "128", "--lr_factor", "1", "--output", "xxx", "--seed", "2", "--NI_type", "Uniform", "--delta_alpha", "0.15", "--spike_windows", "20", "--lens", "0.2"
+
+                    // "--gpu", "1", "--lr", "5e-4", "--approach", "sgdsnn", "--nhid", "1000", "--nepochs", "100", "--experiment", "alphabet_classIL", "--nlayers", "1", "--sbatch", "128", "--lr_factor", "1", "--output", "xxx", "--seed", "1", "--NI_type", "Uniform", "--delta_alpha", "0.15"
+
+                    // "--gpu", "1", "--lr", "5e-4", "--approach", "ewcsnn", "--nhid", "1000", "--nepochs", "100", "--experiment", "alphabet_classIL", "--nlayers", "1", "--sbatch", "128", "--lr_factor", "1", "--output", "xxx", "--seed", "1", "--NI_type", "Uniform", "--alpha", "1.7", "--spike_windows", "20"
+
+                    // cifar
+                    // "--gpu", "0", "--lr", "5e-4", "--approach", "nacasnn", "--nhid", "4000", "--nepochs", "100", "--experiment", "cifar_classIL", "--nlayers", "1", "--sbatch", "64", "--lr_factor", "1", "--output", "xxx", "--seed", "2", "--NI_type", "Uniform", "--delta_alpha", "0.2", "--spike_windows", "20", "--lens", "0.2", "--thresh", "0.5"
+
+                    // mathgreek
+                    // "--gpu", "0", "--lr", "5e-4", "--approach", "nacasnn", "--nhid", "1000", "--nepochs", "20", "--experiment", "mathgreek_classIL", "--nlayers", "1", "--sbatch", "32", "--lr_factor", "1", "--output", "xxx", "--seed", "2", "--NI_type", "Uniform", "--alpha", "0.8", "--spike_windows", "20", "--lens", "0.2", "--thresh", "0.5"
+
+                    // "--gpu", "0", "--lr", "5e-3", "--approach", "sgdsnn", "--nhid", "1000", "--nepochs", "100", "--experiment", "mathgreek_classIL", "--nlayers", "1", "--sbatch", "32", "--lr_factor", "1", "--output", "xxx", "--seed", "2", "--NI_type", "Uniform", "--delta_alpha", "0.15", "--spike_windows", "20", "--lens", "0.5"
+
+                    // dvsgesture
+                    "--gpu", "0", "--lr", "5e-3", "--approach", "nacasnn", "--nhid", "3000", "--nepochs", "10", "--experiment", "gesture_classIL", "--nlayers", "1", "--sbatch", "8", "--lr_factor", "1", "--output", "xxx", "--seed", "0", "--NI_type", "Uniform", "--spike_windows", "20", "--delta_alpha", "0.6", "--thresh", "0.5", "--lens", "0.2"//, "--delta_alpha", "0.1"
+                ]
+        }
+    ]
+}

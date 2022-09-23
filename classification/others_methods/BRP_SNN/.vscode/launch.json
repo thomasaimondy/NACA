@@ -1,0 +1,24 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args":
+                [
+                //*********** TIDigits ********** BRP
+                // "--epochs", "100", "--batch-size", "16", "--test-batch-size", "16", "--lr", "0.0001", "--topology", "CONV_64_5_1_2_CONV_128_5_1_2_FC_1000_FC_10", "--randKill", "0.1", "--codename", "test", "--train-mode", "BRP", "--gpu", "1", "--dataset", "tidigits", "--brpscale", "5e-4"
+
+                //*********** MNIST ********** BRP
+                "--epochs", "100", "--batch-size", "32", "--test-batch-size", "32", "--lr", "0.0001", "--topology", "CONV_64_5_1_2_CONV_128_5_1_2_FC_1000_FC_10", "--randKill", "1", "--codename", "test", "--train-mode", "BRP", "--gpu", "3", "--dataset", "MNIST", "--brpscale", "5e-4"
+                ]
+        }
+    ]
+}
