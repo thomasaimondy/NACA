@@ -124,18 +124,6 @@ def expectation(labels):
     return (Ea + Eb) / 2
 
 
-def reset_weights_NI(NI):
-    if utils.args.distribution == 'uniform':
-        torch.nn.init.uniform_(NI)
-    elif utils.args.distribution == 'normal':
-        torch.nn.init.normal_(NI, mean=0.5, std=1)
-        NI.clamp_(0, 1)
-    elif utils.args.distribution == 'beta':
-        dist = Beta(torch.ones_like(NI) * 0.5, torch.ones_like(NI) * 0.5)
-        NI.data = dist.sample()
-    return NI
-
-
 def local_modulation(neuromodulator_level):
     lambda_inv = utils.args.lambda_inv
     theta_max = utils.args.theta_max
@@ -153,3 +141,15 @@ def local_modulation(neuromodulator_level):
         modulation[1.5 * lambda_inv < neuromodulator_level] = phase_four[1.5 * lambda_inv < neuromodulator_level]
 
     return modulation
+
+
+def reset_weights_NI(NI):
+    if utils.args.distribution == 'uniform':
+        torch.nn.init.uniform_(NI)
+    elif utils.args.distribution == 'normal':
+        torch.nn.init.normal_(NI, mean=0.5, std=1)
+        NI.clamp_(0, 1)
+    elif utils.args.distribution == 'beta':
+        dist = Beta(torch.ones_like(NI) * 0.5, torch.ones_like(NI) * 0.5)
+        NI.data = dist.sample()
+    return NI

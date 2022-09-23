@@ -15,7 +15,7 @@ parser.add_argument('--experiment', default='mnist_classIL', type=str, required=
 parser.add_argument('--approach', default='naca', type=str, required=False, choices=['sgd', 'ewc', 'naca', 'sgdsnn', 'ewcsnn', 'nacasnn'])
 parser.add_argument('--output', default='', type=str, required=False)
 parser.add_argument('--nepochs', default=100, type=int, required=False)
-parser.add_argument('--lr', default=5e-4, type=float, required=False) # 5e-4 is the best parameters for nacasnn in MNIST dataset
+parser.add_argument('--lr', default=5e-5, type=float, required=False) # 5e-4 is the best parameters for nacasnn in MNIST dataset
 parser.add_argument('--lr_factor', default=1, type=float, required=False)
 parser.add_argument('--parameter', type=str, default='')
 parser.add_argument('--gpu', type=str, default='0', help='Number of used gpu')
