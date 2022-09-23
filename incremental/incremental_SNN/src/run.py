@@ -7,7 +7,7 @@ sys.path.append('../..')
 tstart = time.time()
 
 # Arguments
-parser = argparse.ArgumentParser(description='xxx')
+parser = argparse.ArgumentParser(description='')
 # common parameters for all methods
 parser.add_argument('--seed', type=int, default=0, help='(default=%(default)d)') 
 parser.add_argument('--mini', action='store_true', help='the mini dataset')

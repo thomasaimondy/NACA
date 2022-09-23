@@ -105,6 +105,7 @@ def get(mini=False, fixed_order=False):
 
 if __name__ == '__main__':
     import cv2
+    import pandas as pd
     from sklearn.model_selection import train_test_split
     
     folders = os.listdir('C:/Users/Administrator/Downloads/mathgreek/mathgreek')
