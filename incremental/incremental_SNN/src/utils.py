@@ -4,17 +4,6 @@ from copy import deepcopy
 import torch
 from tqdm import tqdm
 
-TraceOfOutput = []
-TraceOfHidden = []
-TraceOfHiddenTest = []
-trace_name = None
-train_mode = None
-without_P = None
-begin = False
-LBP_mode = None 
-B_plasticity = None
-T = None
-u = None
 args = None
 epoch = []
 
@@ -105,7 +94,7 @@ def fisher_matrix_diag(t,x,y,model,criterion,sbatch=20):
         target=torch.autograd.Variable(y[b],volatile=False)
         # Forward and backward
         model.zero_grad()
-        outputs=model.forward(images)
+        outputs=model.forward(images, t)
         loss=criterion(t,outputs,target)
         loss.backward()
         # Get gradients

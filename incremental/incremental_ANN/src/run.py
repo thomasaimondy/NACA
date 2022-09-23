@@ -9,14 +9,13 @@ import sys, os, argparse, time
 import numpy as np
 import torch
 import utils
-
-tstart = time.time()
+sys.path.append('../..')
 import time
-
+tstart = time.time()
 # Arguments
 parser = argparse.ArgumentParser(description='')
 # common parameters for all methods
-parser.add_argument('--seed', type=int, default=1, help='(default=%(default)d)')  #(0,1,4,100,1300)
+parser.add_argument('--seed', type=int, default=0, help='(default=%(default)d)')  #(0,1,4,100,1300)
 parser.add_argument('--mini', action='store_true', help='the mini dataset')
 parser.add_argument('--experiment', default='mnist_classIL', type=str, required=False, choices=['mnist_classIL', 'cifar_classIL', 'gesture_classIL', 'alphabet_classIL', 'mathgreek_classIL'], help='(default=%(default)s)')
 parser.add_argument('--approach', default='naca', type=str, required=False, choices=['sgd', 'ewc', 'naca'], help='(default=%(default)s)')
@@ -57,7 +56,7 @@ else:
     rootpath = rootpath + '_' + args.output
     if not os.path.exists(rootpath):
         os.makedirs(rootpath)
-    args.output = rootpath + '/' + timeclock + '_nhid' + str(args.nhid) + '_nalyers' + str(args.nlayers) + str(args.nlayers) + '_alpha' + str(args.bias) + '_delta_alpha' + str(args.delta_bias)
+    args.output = rootpath + '/' + timeclock + '_nhid' + str(args.nhid) + '_nalyers' + str(args.nlayers) + str(args.nlayers) + '_bias' + str(args.bias) + '_delta_bias' + str(args.delta_bias)
 print('=' * 100)
 print('Arguments =')
 for arg in vars(args):
@@ -78,15 +77,15 @@ else:
 
 # Args -- Experiment
 if args.experiment == 'mnist_classIL':
-    from dataloaders import mnist_classIL as dataloader
+    from Dataloaders import mnist_classIL as dataloader
 elif args.experiment == 'cifar_classIL':
-    from dataloaders import cifar_classIL as dataloader
+    from Dataloaders import cifar_classIL as dataloader
 elif args.experiment == 'gesture_classIL':
-    from dataloaders import gesture_classIL as dataloader
+    from Dataloaders import gesture_classIL as dataloader
 elif args.experiment == 'alphabet_classIL':
-    from dataloaders import alphabet_classIL as dataloader
+    from Dataloaders import alphabet_classIL as dataloader
 elif args.experiment == 'mathgreek_classIL':
-    from dataloaders import mathgreek_classIL as dataloader
+    from Dataloaders import mathgreek_classIL as dataloader
 
 # Args -- Approachs -- Networks
 if args.approach == 'sgd':
@@ -126,15 +125,6 @@ acc = np.zeros((len(taskcla), len(taskcla)), dtype=np.float32)
 lss = np.zeros((len(taskcla), len(taskcla)), dtype=np.float32)
 
 print('Inits...')
-if args.approach in ['naca', 'nacasnn']:
-    net = network.Net(args, inputsize, taskcla, labsize, nhid=args.nhid, nlayers=args.nlayers).cuda()
-else:
-    net = network.Net(args, inputsize, taskcla, nhid=args.nhid, nlayers=args.nlayers).cuda()
-
-if args.approach in ['naca', 'nacasnn']:
-    appr = approach.Appr(net, labsize, nepochs=args.nepochs, lr=args.lr, lr_factor=args.lr_factor, args=args, sbatch=args.sbatch)
-else:
-    appr = approach.Appr(net, nepochs=args.nepochs, lr=args.lr, args=args, sbatch=args.sbatch, lr_factor=args.lr_factor)
 
 for t, ncla in taskcla:
     print('*' * 100)

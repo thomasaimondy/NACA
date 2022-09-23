@@ -1,11 +1,9 @@
 import os
-import sys, time
+import time
 import numpy as np
 import torch
-from copy import deepcopy
 
 import utils
-
 
 class Appr(object):
     """ Class implementing the Elastic Weight Consolidation approach described in http://arxiv.org/abs/1612.00796 """
@@ -81,23 +79,17 @@ class Appr(object):
                     lr /= self.lr_factor
                     lr = max(lr, self.lr_min)
                     print(' lr={:.1e}'.format(lr), end='')
-                    # if lr<self.lr_min:
-                    #     print()
-                    #     break
                     patience = self.lr_patience
                     self.optimizer = self._get_optimizer(lr)
             print()
             ## thomas ,quick training
             if valid_acc > 0.95:
                 break
-            # if valid_loss < 0.01:
-            #     break
         utils.epoch.append(e)
         # Restore best
         utils.set_model_(self.model, best_model)
 
         # Update old
-        # self.model_old=deepcopy(self.model)
         self.model_old = self.get_weights_copy(self.model)
         self.model_old.eval()
         utils.freeze_model(self.model_old)  # Freeze the weights
@@ -109,10 +101,8 @@ class Appr(object):
                 fisher_old[n] = self.fisher[n].clone()
         self.fisher = utils.fisher_matrix_diag(t, xtrain, ytrain, self.model, self.criterion)
         if t > 0:
-            # Watch out! We do not want to keep t models (or fisher diagonals) in memory, therefore we have to merge fisher diagonals
             for n, _ in self.model.named_parameters():
-                self.fisher[n] = (self.fisher[n] + fisher_old[n] * t) / (t + 1)  # Checked: it is better than the other option
-                #self.fisher[n]=0.5*(self.fisher[n]+fisher_old[n])
+                self.fisher[n] = (self.fisher[n] + fisher_old[n] * t) / (t + 1) 
 
         return 1, 2
 
@@ -132,7 +122,7 @@ class Appr(object):
                 targets = torch.autograd.Variable(y[b])
 
             # Forward current model
-            outputs = self.model.forward(images)
+            outputs = self.model.forward(images, t)
             output = outputs
             loss = self.criterion(t, output, targets)
 
@@ -162,7 +152,7 @@ class Appr(object):
                 targets = torch.autograd.Variable(y[b])
 
             # Forward
-            outputs = self.model.forward(images)
+            outputs = self.model.forward(images, t)
             output = outputs
             loss = self.criterion(t, output, targets)
             _, pred = output.max(1)
@@ -182,5 +172,5 @@ class Appr(object):
         if t > 0:
             for (name, param), (_, param_old) in zip(self.model.named_parameters(), self.model_old.named_parameters()):
                 loss_reg += torch.sum(self.fisher[name] * (param_old - param).pow(2)) / 2
-        # targets = targets.max(1)[1]
+
         return self.mse(output, targets) + self.lamb * loss_reg

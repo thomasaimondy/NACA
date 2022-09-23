@@ -1,55 +1,46 @@
-##########################################################################################
-#### Code for Incremental learning of SNNs using NACA
-#### Multiple benchmark datasets and ANNs using SOTA algorithms (EWC, SGD, Joint, ...)
-#### 2022-09-06， CASIA, Tielin Zhang et al.
-#### Based on architectures of HAT [Serrà, 2018, ICML]
-#########################################################################################
-
 import sys, os, argparse, time
 import numpy as np
 import torch
-import matplotlib.pyplot as plt
 import utils
-import platform
-
-tstart = time.time()
 import time
-import pickle
+sys.path.append('../..')
+tstart = time.time()
 
 # Arguments
 parser = argparse.ArgumentParser(description='xxx')
-parser.add_argument('--seed', type=int, default=0, help='(default=%(default)d)')  #(0,1,4,100,1300)
+# common parameters for all methods
+parser.add_argument('--seed', type=int, default=0, help='(default=%(default)d)') 
 parser.add_argument('--mini', action='store_true', help='the mini dataset')
 parser.add_argument('--experiment', default='mnist_classIL', type=str, required=False, choices=['mnist_classIL', 'cifar_classIL', 'gesture_classIL', 'alphabet_classIL', 'mathgreek_classIL'], help='(default=%(default)s)')
-
 parser.add_argument('--approach', default='nacasnn', type=str, required=False, choices=['nacasnn', 'sgdsnn', 'ewcsnn'], help='(default=%(default)s)')
 parser.add_argument('--output', default='', type=str, required=False, help='(default=%(default)s)')
-parser.add_argument('--nepochs', default=100, type=int, required=False, help='(default=%(default)d)')  # enough iteration times is important
+parser.add_argument('--nepochs', default=100, type=int, required=False, help='(default=%(default)d)')  
 parser.add_argument('--lr', default=5e-4, type=float, required=False, help='(default=%(default)f)')
 parser.add_argument('--lr_factor', default=1, type=float, required=False, help='(default=%(default)f)')
 parser.add_argument('--parameter', type=str, default='', help='(default=%(default)s)')
-parser.add_argument('--gpu', type=str, default='1', help='(default=%(default)s)')
+parser.add_argument('--gpu', type=str, default='0', help='(default=%(default)s)')
 parser.add_argument('--multi_output', action='store_true', default=False, help='the type of ouput layer')
-parser.add_argument('--spike_windows', type=int, default=20, help='(default=%(default)s)')
-parser.add_argument('--STDP', action='store_false')
-parser.add_argument('--NI_type', type=str, default='Uniform', required=False, choices=['Regions_Standard', 'Regions_Orthogonal_gain_10', 'Regions_Orthogonal_gain_1', 'Orthogonal', 'Uniform', 'Ones_like'], help='(default=%(default)s)')
-parser.add_argument('--NI_plasticity', type=str, default='LB', required=False, choices=['LTP', 'LTD', 'LB', 'LB_decay', 'Err', 'TP'], help='(default=%(default)s)')
 parser.add_argument('--nhid', type=int, default=1000, help='(default=%(default)d)')
 parser.add_argument('--sbatch', type=int, default=256, help='(default=%(default)d)')
 parser.add_argument('--nlayers', type=int, default=1, help='(default=%(default)d)')
-parser.add_argument('--alpha', type=float, default=None, help='between the maximum and minimum input value')
-parser.add_argument('--delta_alpha', type=float, default=None)
+parser.add_argument('--thresh', type=float, default=0.5, help='thresh')
+parser.add_argument('--lens', type=float, default=0.2, help='lens')
+parser.add_argument('--decay', type=float, default=0.2, help='decay')
+parser.add_argument('--spike_windows', type=int, default=20, help='(default=%(default)s)')
+parser.add_argument('--fixed_order', action='store_true')
+# parameters for naca
+parser.add_argument('--bias', type=float, default=None, help='between the maximum and minimum input value')
+parser.add_argument('--delta_bias', type=float, default=0.2)
 parser.add_argument('--lambda_inv', type=int, default=0.5)
 parser.add_argument('--theta_max', type=int, default=1.2)
-parser.add_argument('--thresh', type=float, default=0.5, help='thresh')
-parser.add_argument('--lens', type=float, default=0.5, help='lens')
-parser.add_argument('--decay', type=float, default=0.2, help='decay')
-parser.add_argument('--plot', action='store_true', default=False, help='plot inner states')
+parser.add_argument('--distribution', type=str, default='uniform', required=False, choices=['uniform', 'normal', 'beta'], help='(default=%(default)s)')
+
 args = parser.parse_args()
 
+if args.delta_bias is not None:
+    args.bias = None
 utils.args = args
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
-utils.NI_plasticity = args.NI_plasticity
 
 timeclock = time.strftime("%Y%m%d%H%M%S", time.localtime())
 rootpath = '../res/' + args.experiment + '_' + args.approach
@@ -64,7 +55,7 @@ else:
     rootpath = rootpath + '_' + args.output
     if not os.path.exists(rootpath):
         os.makedirs(rootpath)
-    args.output = rootpath + '/' + timeclock + '_nhid' + str(args.nhid) + '_nalyers' + str(args.nlayers) + '_alpha' + str(args.alpha) + '_delta_alpha' + str(args.delta_alpha)
+    args.output = rootpath + '/' + timeclock + '_nhid' + str(args.nhid) + '_nalyers' + str(args.nlayers) + '_bias' + str(args.bias) + '_delta_bias' + str(args.delta_bias)
 print('=' * 100)
 print('Arguments =')
 for arg in vars(args):
@@ -85,15 +76,15 @@ else:
 
 # Args -- Experiment
 if args.experiment == 'mnist_classIL':
-    from dataloaders import mnist_classIL as dataloader
+    from Dataloaders import mnist_classIL as dataloader
 elif args.experiment == 'cifar_classIL':
-    from dataloaders import cifar_classIL as dataloader
+    from Dataloaders import cifar_classIL as dataloader
 elif args.experiment == 'gesture_classIL':
-    from dataloaders import gesture_classIL as dataloader
+    from Dataloaders import gesture_classIL as dataloader
 elif args.experiment == 'alphabet_classIL':
-    from dataloaders import alphabet_classIL as dataloader
+    from Dataloaders import alphabet_classIL as dataloader
 elif args.experiment == 'mathgreek_classIL':
-    from dataloaders import mathgreek_classIL as dataloader
+    from Dataloaders import mathgreek_classIL as dataloader
 
 # Args -- Approachs -- Networks
 if args.approach == 'nacasnn':
@@ -109,7 +100,7 @@ elif args.approach == 'ewcsnn':
 ########################################################################################################################
 # Load
 print('Load data...')
-data, taskcla, inputsize, labsize = dataloader.get(seed=args.seed, mini=args.mini)
+data, taskcla, inputsize, labsize = dataloader.get(mini=args.mini, fixed_order=args.fixed_order)
 args.labsize = labsize
 print('Input size =', inputsize, '\nTask info =', taskcla)
 
@@ -145,11 +136,6 @@ for t, ncla in taskcla:
     xvalid = data[t]['valid']['x'].cuda()
     yvalid = data[t]['valid']['y'].cuda()
     task = t
-
-    if args.plot:
-        image = xtrain[0].squeeze()
-        plt.imshow(np.array(image.cpu()))
-        plt.savefig('../res/image_In.png', dpi=400)
 
     utils.train_mode = 'train'
     appr.train(task, xtrain, ytrain, xvalid, yvalid)

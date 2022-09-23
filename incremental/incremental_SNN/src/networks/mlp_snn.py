@@ -1,12 +1,9 @@
 import sys
-import os
-
 import torch
 
 sys.path.append("..")
 import utils
 
-os.environ["CUDA_VISIBLE_DEVICES"] = utils.args.gpu
 spike_args = {}
 spike_args['thresh'] = utils.args.thresh
 spike_args['lens'] = utils.args.lens
@@ -37,8 +34,7 @@ class Net(torch.nn.Module):
                 self.last = SpikeLinear(self.args, nhid, n)
         return
 
-    def forward(self, x):
-        # h = self.maxpool(self.drop(self.relu(self.conv1(x))))
+    def forward(self, x, t):
         input_ = x.view(x.size(0), -1)
 
         for step in range(self.spike_window):
@@ -89,7 +85,7 @@ class SpikeLinear(torch.nn.Module):
             self.sumspike = torch.zeros((batchsize, self.out_features)).to(self.fc.weight.device)
 
         self.time_counter += 1
-        self.mem, self.spike = mem_update(self.fc, self.bn, x, self.mem, self.spike)
+        self.mem, self.spike = mem_update(self.fc, x, self.mem, self.spike)
         self.sumspike += self.spike
         if self.time_counter == self.spike_window:
             self.time_counter = 0
@@ -116,9 +112,8 @@ act_fun = ActFun.apply
 
 
 # Membrane potential
-def mem_update(ops, batchnorm, x, mem, spike, lateral=None):
-    a = torch.sigmoid(ops(x))
-    mem = mem * spike_args['decay'] * (1. - spike) + a
+def mem_update(ops, x, mem, spike, lateral=None):
+    mem = mem * spike_args['decay'] * (1. - spike) + torch.sigmoid(ops(x))
     if lateral:
         mem += lateral(spike)
     spike = act_fun(mem)

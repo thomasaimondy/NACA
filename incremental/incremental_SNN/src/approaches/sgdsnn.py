@@ -1,10 +1,9 @@
-import sys, time
+import time
 import numpy as np
 import torch
 from tqdm import tqdm
 
 import utils
-
 
 class Appr(object):
     def __init__(self, model, nepochs=100, sbatch=64, lr=0.05, lr_min=1e-3, lr_factor=1, lr_patience=5, clipgrad=10000, args=None):
@@ -19,7 +18,6 @@ class Appr(object):
         self.clipgrad = clipgrad
         self.nlab = utils.args.labsize
 
-        # self.criterion=torch.nn.CrossEntropyLoss()
         self.criterion = torch.nn.MSELoss()
         self.optimizer = self._get_optimizer()
 
@@ -35,7 +33,6 @@ class Appr(object):
         lr = self.lr
         patience = self.lr_patience
         self.optimizer = self._get_optimizer(lr)
-
         # Loop epochs
         ytrain = torch.zeros(ytrain.shape[0], self.nlab).cuda().scatter_(1, ytrain.unsqueeze(1).long(), 1.0).cuda()
         yvalid = torch.zeros(yvalid.shape[0], self.nlab).cuda().scatter_(1, yvalid.unsqueeze(1).long(), 1.0).cuda()
@@ -63,17 +60,12 @@ class Appr(object):
                     lr /= self.lr_factor
                     lr = max(lr, self.lr_min)
                     print(' lr={:.1e}'.format(lr), end='')
-                    # if lr<self.lr_min:
-                    #     print()
-                    #     break
                     patience = self.lr_patience
                     self.optimizer = self._get_optimizer(lr)
             print()
             ## thomas ,quick training
             if valid_acc > 0.95:
                 break
-            # if valid_loss < 0.01:
-            #     break
         utils.epoch.append(e)
         # Restore best
         utils.set_model_(self.model, best_model)
@@ -94,12 +86,9 @@ class Appr(object):
             with torch.no_grad():
                 images = torch.autograd.Variable(x[b])
                 targets = torch.autograd.Variable(y[b])
-            # images=torch.autograd.Variable(x[b],volatile=False)
-            # targets=torch.autograd.Variable(y[b],volatile=False)
 
             # Forward
-            outputs = self.model.forward(images)
-            # output=outputs[t]
+            outputs = self.model.forward(images, t)
             output = outputs
             loss = self.criterion(output, targets)
 
@@ -127,12 +116,9 @@ class Appr(object):
             with torch.no_grad():
                 images = torch.autograd.Variable(x[b])
                 targets = torch.autograd.Variable(y[b])
-            # images=torch.autograd.Variable(x[b],volatile=True)
-            # targets=torch.autograd.Variable(y[b],volatile=True)
 
             # Forward
-            outputs = self.model.forward(images)
-            # output=outputs[t]
+            outputs = self.model.forward(images, t)
             output = outputs
             loss = self.criterion(output, targets)
             _, pred = output.max(1)
@@ -140,9 +126,7 @@ class Appr(object):
             hits = (pred == targets).float()
 
             # Log
-            # total_loss+=loss.data.cpu().numpy()[0]*len(b) #original code
             total_loss += loss.data.cpu().numpy().item() * len(b)
-            # total_acc+=hits.sum().data.cpu().numpy()[0] #original code
             total_acc += hits.sum().data.cpu().numpy().item()
             total_num += len(b)
 

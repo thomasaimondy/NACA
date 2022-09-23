@@ -1,33 +1,21 @@
-import os, sys
+import os
 import pickle
-import time
 import numpy as np
 import torch
-from torchvision import datasets, transforms
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
-# import pandas as pd
-
-
-########################################################################################################################
 class Mathgreek(Dataset):
     def __init__(self, train_or_test, transform=None, target_transform=None):
         super(Mathgreek, self).__init__()
-        if os.getlogin() == 'jiashuncheng':
-            roots = '/home/jiashuncheng/code/EAST/DATASETS/mathgreek/'
-        elif os.getlogin() == 'xushuang4':
-            roots = '/mnt/lustre/xushuang4/jiashuncheng/code/EAST/classification/others_methods/BRP'
-        else:
-            roots = '/home/user/jiashuncheng/code/EAST/DATASETS/mathgreek/'
-        with open(roots + 'train_mathgreek_erode4.pkl', 'rb') as f:
+        roots = '../../../Dataset/mathgreek'
+        with open(os.path.join(roots, 'train_mathgreek_erode4.pkl'), 'rb') as f:
             data_train = pickle.load(f)
-        with open(roots + 'test_mathgreek_erode4.pkl', 'rb') as f:
+        with open(os.path.join(roots, 'test_mathgreek_erode4.pkl'), 'rb') as f:
             data_test = pickle.load(f)
 
         index = data_train[0].shape[0]
         data = np.r_[data_train[0], data_test[0]]
-        # data = 1 - data
         data = (data - data[:index].mean()) / data[:index].std()
         data_train_values = data[:index]
         data_test_values = data[index:]
@@ -50,26 +38,24 @@ class Mathgreek(Dataset):
         return len(self.x_values)
 
 
-def get(seed=0, mini=False, fixed_order=False, pc_valid=0):
+def get(mini=False, fixed_order=False):
     data = {}
     taskcla = []
-    # size=[1,32,32]
     size = [1, 45, 45]
-    labsize = 46
+    labsize = 46  
     seeds = np.array(list(range(labsize)), dtype=int)
-    np.random.shuffle(seeds)
+    if not fixed_order:
+        np.random.shuffle(seeds)
     print(seeds)
 
-    mean = (0.1307, )
-    std = (0.3081, )
     dat = {}
 
-    dat['train'] = Mathgreek('train', transform=transforms.ToTensor())
-    dat['test'] = Mathgreek('test', transform=transforms.ToTensor())
+    dat['train'] = Mathgreek('train')
+    dat['test'] = Mathgreek('test')
     print('load...')
     for i, r in enumerate(seeds):
         data[i] = {}
-        data[i]['name'] = 'letters-{:d}'.format(r)
+        data[i]['name'] = 'mathgreek-{:d}'.format(r)
         data[i]['ncla'] = labsize
         for s in ['train', 'test']:
             data[i][s] = {'x': [], 'y': []}
@@ -82,10 +68,6 @@ def get(seed=0, mini=False, fixed_order=False, pc_valid=0):
             # Separate different samples into different tasks
             data[index][s]['x'].append(image)
             data[index][s]['y'].append(target.numpy()[0])
-    for i, r in enumerate(seeds):
-        for s in ['train', 'test']:
-            data[i][s]['x'] = torch.stack(data[i][s]['x']).view(-1, size[0], size[1], size[2])
-            data[i][s]['y'] = torch.LongTensor(np.array(data[i][s]['y'], dtype=int)).view(-1)
 
     len_train = []
     len_test = []
@@ -97,6 +79,11 @@ def get(seed=0, mini=False, fixed_order=False, pc_valid=0):
         data[index]['train']['y'] = data[index]['train']['y'][:500]
         data[index]['test']['x'] = data[index]['test']['x'][:500]
         data[index]['test']['y'] = data[index]['test']['y'][:500]
+
+    for i, r in enumerate(seeds):
+        for s in ['train', 'test']:
+            data[i][s]['x'] = torch.stack(data[i][s]['x']).view(-1, size[0], size[1], size[2])
+            data[i][s]['y'] = torch.LongTensor(np.array(data[i][s]['y'], dtype=int)).view(-1)
 
     # Validation
     for t in data.keys():
@@ -117,6 +104,9 @@ def get(seed=0, mini=False, fixed_order=False, pc_valid=0):
 ########################################################################################################################
 
 if __name__ == '__main__':
+    import cv2
+    from sklearn.model_selection import train_test_split
+    
     folders = os.listdir('C:/Users/Administrator/Downloads/mathgreek/mathgreek')
     data = []
     label = []
