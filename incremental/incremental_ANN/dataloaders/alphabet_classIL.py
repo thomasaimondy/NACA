@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
+
 class Alphabet(Dataset):
     def __init__(self, train_or_test, transform=None, target_transform=None):
         super(Alphabet, self).__init__()
@@ -38,6 +39,7 @@ class Alphabet(Dataset):
     def __len__(self):
         return len(self.x_values)
 
+
 def get(mini=False, fixed_order=False):
     data = {}
     taskcla = []
@@ -47,7 +49,7 @@ def get(mini=False, fixed_order=False):
     if not fixed_order:
         np.random.shuffle(seeds)
     print(seeds)
-    
+
     dat = {}
 
     dat['train'] = Alphabet('train')

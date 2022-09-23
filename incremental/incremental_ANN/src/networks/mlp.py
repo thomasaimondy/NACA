@@ -1,6 +1,7 @@
 import sys
 import torch
 
+
 class Net(torch.nn.Module):
     def __init__(self, args, inputsize, taskcla, nhid, nlayers=1):
         super(Net, self).__init__()

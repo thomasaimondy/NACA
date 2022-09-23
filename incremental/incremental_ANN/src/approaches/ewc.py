@@ -4,6 +4,7 @@ import torch
 from copy import deepcopy
 import utils
 
+
 class Appr(object):
     """ Class implementing the Elastic Weight Consolidation approach described in http://arxiv.org/abs/1612.00796 """
     def __init__(self, model, nepochs=100, sbatch=64, lr=0.05, lr_min=1e-3, lr_factor=3, lr_patience=5, clipgrad=100, lamb=5e4, args=None):

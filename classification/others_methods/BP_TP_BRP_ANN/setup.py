@@ -30,7 +30,7 @@ def setup(args):
         print("=== Loading the MNIST dataset...")
         (train_loader, traintest_loader, test_loader) = load_dataset_mnist(args, kwargs)
     elif args.dataset == "tidigits":
-        print("=== Loading and augmenting the tidifits dataset...")
+        print("=== Loading and augmenting the tidigits dataset...")
         (train_loader, traintest_loader, test_loader) = load_dataset_tidigits(args, kwargs)
     else:
         print("=== ERROR - Unsupported dataset ===")

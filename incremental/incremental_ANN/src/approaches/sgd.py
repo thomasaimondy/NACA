@@ -3,6 +3,7 @@ import numpy as np
 import torch
 import utils
 
+
 class Appr(object):
     def __init__(self, model, nepochs=100, sbatch=64, lr=0.05, lr_min=1e-3, lr_factor=1, lr_patience=5, clipgrad=10000, args=None):
         self.model = model

@@ -35,8 +35,6 @@ class Net(torch.nn.Module):
         return
 
     def forward(self, x, t):
-        input_ = x.view(x.size(0), -1)
-
         for step in range(self.spike_window):
             h = x.reshape(x.size(0), -1)
             rand = torch.empty(h.size()).to(x.device)
@@ -49,8 +47,8 @@ class Net(torch.nn.Module):
             if self.nlayers > 2:
                 h = self.fc3(h)
             self.last(h)
-        # output encoding
 
+        # output encoding
         if self.args.multi_output:
             y = self.last[t].sumspike / self.spike_window
         else:
@@ -64,17 +62,11 @@ class SpikeLinear(torch.nn.Module):
         super(SpikeLinear, self).__init__()
         self.args = args
         self.fc = torch.nn.Linear(in_features, out_features, bias=bias)
-        self.bn = torch.nn.BatchNorm1d(in_features)
-        self.in_features = in_features
-        self.out_features = out_features
-        self.mem = torch.zeros((args.sbatch, self.out_features)).to(self.fc.weight.device)
-        self.spike = torch.zeros((args.sbatch, self.out_features)).to(self.fc.weight.device)
-        self.sumspike = torch.zeros((args.sbatch, self.out_features)).to(self.fc.weight.device)
+        self.mem = torch.zeros((args.sbatch, out_features)).to(self.fc.weight.device)
+        self.spike = torch.zeros((args.sbatch, out_features)).to(self.fc.weight.device)
+        self.sumspike = torch.zeros((args.sbatch, out_features)).to(self.fc.weight.device)
         self.time_counter = 0
         self.spike_window = args.spike_windows
-
-        # initialization with zero y
-        self.y_old = 0
 
     # t: current task, x: input, y: output, e: epochs
     def forward(self, x):

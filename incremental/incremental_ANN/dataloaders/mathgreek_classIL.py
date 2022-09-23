@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import Dataset
 from tqdm import tqdm
 
+
 class Mathgreek(Dataset):
     def __init__(self, train_or_test, transform=None, target_transform=None):
         super(Mathgreek, self).__init__()
@@ -42,7 +43,7 @@ def get(mini=False, fixed_order=False):
     data = {}
     taskcla = []
     size = [1, 45, 45]
-    labsize = 46  
+    labsize = 46
     seeds = np.array(list(range(labsize)), dtype=int)
     if not fixed_order:
         np.random.shuffle(seeds)
@@ -74,6 +75,7 @@ def get(mini=False, fixed_order=False):
     for index in range(46):
         len_train.append(len(data[index]['train']['x']))
         len_test.append(len(data[index]['test']['x']))
+    # make the dataset more balance
     for index in range(46):
         data[index]['train']['x'] = data[index]['train']['x'][:500]
         data[index]['train']['y'] = data[index]['train']['y'][:500]
@@ -101,13 +103,13 @@ def get(mini=False, fixed_order=False):
     return data, taskcla, size, labsize
 
 
-########################################################################################################################
+##################################################################################################################
 
 if __name__ == '__main__':
     import cv2
     import pandas as pd
     from sklearn.model_selection import train_test_split
-    
+
     folders = os.listdir('C:/Users/Administrator/Downloads/mathgreek/mathgreek')
     data = []
     label = []

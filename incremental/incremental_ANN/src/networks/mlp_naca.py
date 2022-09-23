@@ -97,7 +97,7 @@ class Linear(torch.nn.Module):
             # Hidden layers
             if self.layer != -1:
                 neuromodulator_level = expectation(y).mm(self.NI.view(-1, prod(self.NI.shape[1:]))).view(u.shape)
-                u.backward(gradient= local_modulation(neuromodulator_level), retain_graph=True)
+                u.backward(gradient=local_modulation(neuromodulator_level), retain_graph=True)
             # Output layers
             else:
                 # MSE
@@ -105,6 +105,7 @@ class Linear(torch.nn.Module):
                 err = torch.matmul(err, torch.eye(err.shape[1]).to(err.device))
                 u.backward(gradient=err, retain_graph=False)
         return u
+
 
 def expectation(labels):
     sigma = 1
@@ -122,6 +123,7 @@ def expectation(labels):
     Eb = torch.zeros(labels.shape[0], 2 * labels.shape[1], device=labels.device).scatter_(1, Eb.unsqueeze(1).long(), 1.0)
     return (Ea + Eb) / 2
 
+
 def reset_weights_NI(NI):
     if utils.args.distribution == 'uniform':
         torch.nn.init.uniform_(NI)
@@ -132,6 +134,7 @@ def reset_weights_NI(NI):
         dist = Beta(torch.ones_like(NI) * 0.5, torch.ones_like(NI) * 0.5)
         NI.data = dist.sample()
     return NI
+
 
 def local_modulation(neuromodulator_level):
     lambda_inv = utils.args.lambda_inv

@@ -92,7 +92,7 @@ def setup(args):
         print("=== Loading and augmenting the CIFAR-10 dataset...")
         (train_loader, traintest_loader, test_loader) = load_dataset_cifar10_augmented(args, kwargs)
     elif args.dataset == "tidigits":
-        print("=== Loading and augmenting the tidifits dataset...")
+        print("=== Loading and augmenting the tidigits dataset...")
         (train_loader, traintest_loader, test_loader) = load_dataset_tidigits(args, kwargs)
     elif args.dataset == "CIFAR100":
         print("=== Loading and augmenting the CIFAR100 dataset...")

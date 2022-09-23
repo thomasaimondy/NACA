@@ -15,11 +15,12 @@ spike_args['thresh'] = utils.args.thresh
 spike_args['lens'] = utils.args.lens
 spike_args['decay'] = utils.args.decay
 
+
 class Net(torch.nn.Module):
-    def __init__(self, args, inputsize, taskcla, nlab, nlayers=3, nhid=40, pdrop1=0, pdrop2=0, spike_windows=2):
+    def __init__(self, args, inputsize, taskcla, nlab, nlayers=3, nhid=40):
         super(Net, self).__init__()
 
-        self.spike_window = spike_windows
+        self.spike_window = args.spike_windows
         self.args = args
         ncha, size, size2 = inputsize
         self.taskcla = taskcla
@@ -55,13 +56,13 @@ class Net(torch.nn.Module):
             u = (u > rand.float().cuda()).float()
 
             for li in range(len(self.fcs)):
-                u = self.fcs[li](u, laby, t, input_)
+                u = self.fcs[li](u, laby, input_)
                 u = u.detach()
             # output
             if self.args.multi_output:
-                self.last[t](u, laby, t, input_)
+                self.last[t](u, laby, input_)
             else:
-                self.last(u, laby, t, input_)
+                self.last(u, laby, input_)
 
         # output encoding
         if self.args.multi_output:
@@ -94,7 +95,6 @@ class SpikeLinear(torch.nn.Module):
         self.layer = layer
         self.spike_window = args.spike_windows
         self.old_spike = None
-        self.input_ = None
 
     # t: current task, x: input, y: output
     def forward(self, x, y, input_):
@@ -110,10 +110,10 @@ class SpikeLinear(torch.nn.Module):
             u_mask = torch.mean(input_, 0, False)
             u_mask = F.interpolate(u_mask.unsqueeze(0).unsqueeze(0), size=[self.out_features])
             u_mask = u_mask.squeeze(0)
-            if utils.args.bias is not None:  
-                bias = utils.args.bias # bias is the threshold, u_mask may be zeros
+            if utils.args.bias is not None:
+                bias = utils.args.bias  # bias is the threshold, u_mask may be zeros
             else:
-                bias = u_mask.max() - utils.args.delta_bias # ensure the u_mask is not zeros
+                bias = u_mask.max() - utils.args.delta_bias  # ensure the u_mask is not zeros
             u_mask = torch.sigmoid(1000 * (u_mask - bias))
             self.spike = self.spike * u_mask.expand_as(self.spike)
         self.sumspike += self.spike
@@ -155,6 +155,7 @@ def expectation(labels):
     Eb = torch.zeros(labels.shape[0], 2 * labels.shape[1], device=labels.device).scatter_(1, Eb.unsqueeze(1).long(), 1.0)
     return (Ea + Eb) / 2
 
+
 def reset_weights_NI(NI):
     if utils.args.distribution == 'uniform':
         torch.nn.init.uniform_(NI)
@@ -165,6 +166,7 @@ def reset_weights_NI(NI):
         dist = Beta(torch.ones_like(NI) * 0.5, torch.ones_like(NI) * 0.5)
         NI.data = dist.sample()
     return NI
+
 
 def local_modulation(neuromodulator_level):
     lambda_inv = utils.args.lambda_inv
@@ -184,6 +186,7 @@ def local_modulation(neuromodulator_level):
 
     return modulation
 
+
 # simplified STDP
 class ActFun(torch.autograd.Function):
     @staticmethod
@@ -201,7 +204,9 @@ class ActFun(torch.autograd.Function):
 
         return grad_input * delta_spike, None, None
 
+
 act_fun = ActFun.apply
+
 
 # Membrane potential (non-linear sigmoid before the neuron for better performance)
 def mem_update(ops, x, mem, spike, old_spike, drop=None, lateral=None):

@@ -1,41 +1,41 @@
-##########################################################################################
-#### Code for Incremental learning of ANNs using NACA
-#### Multiple benchmark datasets and ANNs using different training algorithms (EWC, SGD, Joint, ...)
-#### 2022-09-06， CASIA, Tielin Zhang et al.
-#### Based on architectures of HAT [Serrà, 2018, ICML]
-#########################################################################################
-
 import sys, os, argparse, time
 import numpy as np
 import torch
 import utils
-sys.path.append('../..')
 import time
+
+sys.path.append('..')
+
 tstart = time.time()
 # Arguments
 parser = argparse.ArgumentParser(description='')
-# common parameters for all methods
-parser.add_argument('--seed', type=int, default=0, help='(default=%(default)d)')  #(0,1,4,100,1300)
-parser.add_argument('--mini', action='store_true', help='the mini dataset')
-parser.add_argument('--experiment', default='mnist_classIL', type=str, required=False, choices=['mnist_classIL', 'cifar_classIL', 'gesture_classIL', 'alphabet_classIL', 'mathgreek_classIL'], help='(default=%(default)s)')
-parser.add_argument('--approach', default='naca', type=str, required=False, choices=['sgd', 'ewc', 'naca'], help='(default=%(default)s)')
-parser.add_argument('--output', default='', type=str, required=False, help='(default=%(default)s)')
-parser.add_argument('--nepochs', default=100, type=int, required=False, help='(default=%(default)d)')
-parser.add_argument('--lr', default=5e-5, type=float, required=False, help='(default=%(default)f)')
-parser.add_argument('--lr_factor', default=1, type=float, required=False, help='(default=%(default)f)')
-parser.add_argument('--parameter', type=str, default='', help='(default=%(default)s)')
-parser.add_argument('--gpu', type=str, default='0', help='(default=%(default)s)')
+# Common parameters for all methods
+parser.add_argument('--seed', type=int, default=0)
+parser.add_argument('--mini', action='store_true', help='Use the mini dataset')
+parser.add_argument('--experiment', default='mnist_classIL', type=str, required=False, choices=['mnist_classIL', 'cifar_classIL', 'gesture_classIL', 'alphabet_classIL', 'mathgreek_classIL'])
+parser.add_argument('--approach', default='naca', type=str, required=False, choices=['sgd', 'ewc', 'naca', 'sgdsnn', 'ewcsnn', 'nacasnn'])
+parser.add_argument('--output', default='', type=str, required=False)
+parser.add_argument('--nepochs', default=100, type=int, required=False)
+parser.add_argument('--lr', default=5e-5, type=float, required=False) # 5e-4 is the best parameters for nacasnn in MNIST dataset
+parser.add_argument('--lr_factor', default=1, type=float, required=False)
+parser.add_argument('--parameter', type=str, default='')
+parser.add_argument('--gpu', type=str, default='0', help='Number of used gpu')
 parser.add_argument('--multi_output', action='store_true', default=False, help='the type of ouput layer')
-parser.add_argument('--nhid', type=int, default=1000, help='(default=%(default)d)')
-parser.add_argument('--sbatch', type=int, default=256, help='(default=%(default)d)')
-parser.add_argument('--nlayers', type=int, default=1, help='(default=%(default)d)')
-parser.add_argument('--fixed_order', action='store_true')
-# parameters for naca
-parser.add_argument('--bias', type=float, default=None)
-parser.add_argument('--delta_bias', type=float, default=0.15)
+parser.add_argument('--nhid', type=int, default=1000)
+parser.add_argument('--sbatch', type=int, default=256)
+parser.add_argument('--nlayers', type=int, default=1)
+parser.add_argument('--fixed_order', action='store_true', help='The labels are sorted in increasing order')
+# Parameters for SNNs
+parser.add_argument('--thresh', type=float, default=0.5, help='Threshold of lif neuron')
+parser.add_argument('--lens', type=float, default=0.2, help='V_window in pseudo-BP')
+parser.add_argument('--decay', type=float, default=0.2, help='Decay time constant for lif neuron')
+parser.add_argument('--spike_windows', type=int, default=20)
+# Parameters for NACA
+parser.add_argument('--bias', type=float, default=None, help='Between the maximum and minimum input value')
+parser.add_argument('--delta_bias', type=float, default=0.15, help='Avoid the zero during training') # 0.2 is the best parameter for naca in MNIST dataset
 parser.add_argument('--lambda_inv', type=int, default=0.5)
 parser.add_argument('--theta_max', type=int, default=1.2)
-parser.add_argument('--distribution', type=str, default='uniform', required=False, choices=['uniform', 'normal', 'beta'], help='(default=%(default)s)')
+parser.add_argument('--distribution', type=str, default='uniform', required=False, choices=['uniform', 'normal', 'beta'])
 args = parser.parse_args()
 
 if args.delta_bias is not None:
@@ -77,15 +77,15 @@ else:
 
 # Args -- Experiment
 if args.experiment == 'mnist_classIL':
-    from Dataloaders import mnist_classIL as dataloader
+    from dataloaders import mnist_classIL as dataloader
 elif args.experiment == 'cifar_classIL':
-    from Dataloaders import cifar_classIL as dataloader
+    from dataloaders import cifar_classIL as dataloader
 elif args.experiment == 'gesture_classIL':
-    from Dataloaders import gesture_classIL as dataloader
+    from dataloaders import gesture_classIL as dataloader
 elif args.experiment == 'alphabet_classIL':
-    from Dataloaders import alphabet_classIL as dataloader
+    from dataloaders import alphabet_classIL as dataloader
 elif args.experiment == 'mathgreek_classIL':
-    from Dataloaders import mathgreek_classIL as dataloader
+    from dataloaders import mathgreek_classIL as dataloader
 
 # Args -- Approachs -- Networks
 if args.approach == 'sgd':
@@ -97,6 +97,15 @@ elif args.approach == 'ewc':
 elif args.approach == 'naca':
     from approaches import naca as approach
     from networks import mlp_naca as network
+elif args.approach == 'sgdsnn':
+    from approaches import sgdsnn as approach
+    from networks import mlp_snn as network
+elif args.approach == 'ewcsnn':
+    from approaches import ewcsnn as approach
+    from networks import mlp_snn as network
+elif args.approach == 'nacasnn':
+    from approaches import nacasnn as approach
+    from networks import mlp_naca_snn as network
 
 # Load
 print('Load data...')
@@ -105,7 +114,7 @@ print('Input size =', inputsize, '\nTask info =', taskcla)
 
 # Inits
 print('Inits...')
-if args.approach == 'naca':
+if args.approach in ['naca', 'nacasnn']:
     net = network.Net(args, inputsize, taskcla, labsize, nhid=args.nhid, nlayers=args.nlayers).cuda()
     appr = approach.Appr(net, labsize, nepochs=args.nepochs, lr=args.lr, lr_factor=args.lr_factor, args=args, sbatch=args.sbatch)
 else:
@@ -131,21 +140,19 @@ for t, ncla in taskcla:
     print('Task {:2d} ({:s})'.format(t, data[t]['name']))
     print('*' * 100)
 
+    # Get data
     xtrain = data[t]['train']['x'].cuda()
     ytrain = data[t]['train']['y'].cuda()
-    print(min(ytrain), max(ytrain))
     xvalid = data[t]['valid']['x'].cuda()
     yvalid = data[t]['valid']['y'].cuda()
-    task = t
 
-    appr.train(task, xtrain, ytrain, xvalid, yvalid)
+    # Train
+    appr.train(t, xtrain, ytrain, xvalid, yvalid)
 
     print('-' * 100)
 
     # Test
-    utils.train_mode = 'test'
     for u in range(t + 1):
-        utils.u = u
         xtest = data[u]['test']['x'].cuda()
         ytest = data[u]['test']['y'].cuda()
         if args.approach in ['naca', 'nacasnn']:

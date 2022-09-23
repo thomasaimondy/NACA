@@ -1,16 +1,14 @@
-import os
 import time
 import numpy as np
 import torch
+from tqdm import tqdm
 
 import utils
 
+
 class Appr(object):
-    """ Class implementing the Elastic Weight Consolidation approach described in http://arxiv.org/abs/1612.00796 """
-    def __init__(self, model, nepochs=100, sbatch=64, lr=0.05, lr_min=1e-3, lr_factor=3, lr_patience=5, clipgrad=100, lamb=5e4, args=None):
+    def __init__(self, model, nepochs=100, sbatch=64, lr=0.05, lr_min=1e-3, lr_factor=1, lr_patience=5, clipgrad=10000, args=None):
         self.model = model
-        self.model_old = None
-        self.fisher = None
 
         self.nepochs = nepochs
         self.sbatch = sbatch
@@ -21,25 +19,10 @@ class Appr(object):
         self.clipgrad = clipgrad
         self.nlab = utils.args.labsize
 
-        self.ce = torch.nn.CrossEntropyLoss()
-        self.mse = torch.nn.MSELoss()
+        self.criterion = torch.nn.MSELoss()
         self.optimizer = self._get_optimizer()
-        self.lamb = lamb  # Grid search = [500,1000,2000,5000,10000,20000,50000]; best was 5000
-        if len(args.parameter) >= 1:
-            params = args.parameter.split(',')
-            print('Setting parameters to', params)
-            self.lamb = float(params[0])
 
         return
-
-    def get_weights_copy(self, model):
-        weights_path = 'weights_temp{}.pt'.format(os.getpid())
-        torch.save(model, weights_path)
-        print('save:', weights_path)
-        load = torch.load(weights_path)
-        os.remove(weights_path)
-        print('remove:', weights_path)
-        return load
 
     def _get_optimizer(self, lr=None):
         if lr is None: lr = self.lr
@@ -51,7 +34,6 @@ class Appr(object):
         lr = self.lr
         patience = self.lr_patience
         self.optimizer = self._get_optimizer(lr)
-
         # Loop epochs
         ytrain = torch.zeros(ytrain.shape[0], self.nlab).cuda().scatter_(1, ytrain.unsqueeze(1).long(), 1.0).cuda()
         yvalid = torch.zeros(yvalid.shape[0], self.nlab).cuda().scatter_(1, yvalid.unsqueeze(1).long(), 1.0).cuda()
@@ -62,8 +44,7 @@ class Appr(object):
             clock1 = time.time()
             train_loss, train_acc = self.eval(t, xtrain, ytrain)
             clock2 = time.time()
-            print('| Epoch {:3d}, time={:5.1f}ms/{:5.1f}ms | Train: loss={:.3f}, acc={:5.1f}% |'.format(e + 1, 1000 * self.sbatch * (clock1 - clock0) / xtrain.size(0), 1000 * self.sbatch * (clock2 - clock1) / xtrain.size(0), train_loss, 100 * train_acc),
-                  end='')
+            print('| Epoch {:3d}, time={:5.1f}ms/{:5.1f}ms | Train: loss={:.3f}, acc={:5.1f}% |'.format(e + 1, 1000 * self.sbatch * (clock1 - clock0) / xtrain.size(0), 1000 * self.sbatch * (clock2 - clock1) / xtrain.size(0), train_loss, 100 * train_acc), end='')
             # Valid
             valid_loss, valid_acc = self.eval(t, xvalid, yvalid)
             print(' Valid: loss={:.3f}, acc={:5.1f}% |'.format(valid_loss, 100 * valid_acc), end='')
@@ -82,27 +63,12 @@ class Appr(object):
                     patience = self.lr_patience
                     self.optimizer = self._get_optimizer(lr)
             print()
-            ## thomas ,quick training
+            ## thomas, quick training
             if valid_acc > 0.95:
                 break
         utils.epoch.append(e)
         # Restore best
         utils.set_model_(self.model, best_model)
-
-        # Update old
-        self.model_old = self.get_weights_copy(self.model)
-        self.model_old.eval()
-        utils.freeze_model(self.model_old)  # Freeze the weights
-
-        # Fisher ops
-        if t > 0:
-            fisher_old = {}
-            for n, _ in self.model.named_parameters():
-                fisher_old[n] = self.fisher[n].clone()
-        self.fisher = utils.fisher_matrix_diag(t, xtrain, ytrain, self.model, self.criterion)
-        if t > 0:
-            for n, _ in self.model.named_parameters():
-                self.fisher[n] = (self.fisher[n] + fisher_old[n] * t) / (t + 1) 
 
         return 1, 2
 
@@ -114,22 +80,22 @@ class Appr(object):
         r = torch.LongTensor(r).cuda()
 
         # Loop batches
-        for i in range(0, len(r), self.sbatch):
+        for i in tqdm(range(0, len(r), self.sbatch)):
             if i + self.sbatch <= len(r): b = r[i:i + self.sbatch]
             else: b = r[i:]
             with torch.no_grad():
                 images = torch.autograd.Variable(x[b])
                 targets = torch.autograd.Variable(y[b])
 
-            # Forward current model
+            # Forward
             outputs = self.model.forward(images, t)
             output = outputs
-            loss = self.criterion(t, output, targets)
+            loss = self.criterion(output, targets)
 
             # Backward
             self.optimizer.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm(self.model.parameters(), self.clipgrad)
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clipgrad)
             self.optimizer.step()
 
         return
@@ -154,7 +120,7 @@ class Appr(object):
             # Forward
             outputs = self.model.forward(images, t)
             output = outputs
-            loss = self.criterion(t, output, targets)
+            loss = self.criterion(output, targets)
             _, pred = output.max(1)
             _, targets = targets.max(1)
             hits = (pred == targets).float()
@@ -165,12 +131,3 @@ class Appr(object):
             total_num += len(b)
 
         return total_loss / total_num, total_acc / total_num
-
-    def criterion(self, t, output, targets):
-        # Regularization for all previous tasks
-        loss_reg = 0
-        if t > 0:
-            for (name, param), (_, param_old) in zip(self.model.named_parameters(), self.model_old.named_parameters()):
-                loss_reg += torch.sum(self.fisher[name] * (param_old - param).pow(2)) / 2
-
-        return self.mse(output, targets) + self.lamb * loss_reg

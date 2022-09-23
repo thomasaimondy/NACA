@@ -1,109 +1,65 @@
-import os
-import pickle
-import time
 import numpy as np
 import torch
-from torch.utils.data import Dataset
+from torchvision import datasets, transforms
 
-class Gesture_pre(Dataset):
-    def __init__(self, train_or_test, transform=None, target_transform=None):
-        super(Gesture_pre, self).__init__()
-        roots = '../../../Dataset/DVSGesture'
-        labels = []
-        datas = []
-        timeStamp = os.stat(roots).st_mtime
-        timeArray = time.localtime(timeStamp)
-        otherStyleTime = time.strftime("%Y--%m--%d %H:%M:%S", timeArray)
-        print(otherStyleTime)
-        with open(os.path.join(roots, 'dvsgesture_1.pkl'), 'rb') as f:
-            data = pickle.load(f)
-        for i in range(len(data)):
-            datas.append(data[i][0].cpu().numpy())
-            labels.append(data[i][1].cpu().numpy())
-        datas = np.array(datas)
-        datas = datas.reshape(-1, datas.shape[-1])
-        labels = np.array(labels)
-        labels = labels.reshape(-1, )
-
-        datas = (datas - datas.mean()) / datas.std()
-
-        if train_or_test == 'train':
-            self.x_values = datas[:1176]
-            self.y_values = labels[:1176]
-        elif train_or_test == 'test':
-            self.x_values = datas[1176:]
-            self.y_values = labels[1176:]
-        self.transform = transform
-        self.target_transform = target_transform
-
-    def __getitem__(self, index):
-        sample = self.x_values[index]
-        label = self.y_values[index]
-        return sample, label
-
-    def __len__(self):
-        return len(self.x_values)
 
 def get(mini=False, fixed_order=False):
     data = {}
     taskcla = []
-    size=[1,1,2000]
-
-    labelsize = 11  #2
+    size = [1, 28, 28]
+    labelsize = 10  #2
     seeds = np.array(list(range(labelsize)), dtype=int)
     if not fixed_order:
         np.random.shuffle(seeds)
     print(seeds)
 
+    # MNIST
     mean = (0.1307, )
     std = (0.3081, )
     dat = {}
+    roots = '../../../Dataset'
+    dat['train'] = datasets.MNIST(roots + '/', train=True, download=True, transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean, std)]))
+    dat['test'] = datasets.MNIST(roots + '/', train=False, download=True, transform=transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean, std)]))
 
-    dat['train'] = Gesture_pre('train')
-    dat['test'] = Gesture_pre('test')
     data[0] = {}
-    data[0]['name'] = 'gesture-{}'.format(seeds[0])
-    data[0]['ncla'] = 11
+    data[0]['name'] = 'mnist-{}'.format(seeds[0])
+    data[0]['ncla'] = 10
 
     data[1] = {}
-    data[1]['name'] = 'gesture-{}'.format(seeds[1])
-    data[1]['ncla'] = 11
+    data[1]['name'] = 'mnist-{}'.format(seeds[1])
+    data[1]['ncla'] = 10
 
     data[2] = {}
-    data[2]['name'] = 'gesture-{}'.format(seeds[2])
-    data[2]['ncla'] = 11
+    data[2]['name'] = 'mnist-{}'.format(seeds[2])
+    data[2]['ncla'] = 10
 
     data[3] = {}
-    data[3]['name'] = 'gesture-{}'.format(seeds[3])
-    data[3]['ncla'] = 11
+    data[3]['name'] = 'mnist-{}'.format(seeds[3])
+    data[3]['ncla'] = 10
 
     data[4] = {}
-    data[4]['name'] = 'gesture-{}'.format(seeds[4])
-    data[4]['ncla'] = 11
+    data[4]['name'] = 'mnist-{}'.format(seeds[4])
+    data[4]['ncla'] = 10
 
     data[5] = {}
-    data[5]['name'] = 'gesture-{}'.format(seeds[5])
-    data[5]['ncla'] = 11
+    data[5]['name'] = 'mnist-{}'.format(seeds[5])
+    data[5]['ncla'] = 10
 
     data[6] = {}
-    data[6]['name'] = 'gesture-{}'.format(seeds[6])
-    data[6]['ncla'] = 11
+    data[6]['name'] = 'mnist-{}'.format(seeds[6])
+    data[6]['ncla'] = 10
 
     data[7] = {}
-    data[7]['name'] = 'gesture-{}'.format(seeds[7])
-    data[7]['ncla'] = 11
+    data[7]['name'] = 'mnist-{}'.format(seeds[7])
+    data[7]['ncla'] = 10
 
     data[8] = {}
-    data[8]['name'] = 'gesture-{}'.format(seeds[8])
-    data[8]['ncla'] = 11
+    data[8]['name'] = 'mnist-{}'.format(seeds[8])
+    data[8]['ncla'] = 10
 
     data[9] = {}
-    data[9]['name'] = 'gesture-{}'.format(seeds[9])
-    data[9]['ncla'] = 11
-
-    data[10] = {}
-    data[10]['name'] = 'gesture-{}'.format(seeds[10])
-    data[10]['ncla'] = 11
+    data[9]['name'] = 'mnist-{}'.format(seeds[9])
+    data[9]['ncla'] = 10
 
     for s in ['train', 'test']:
         loader = torch.utils.data.DataLoader(dat[s], batch_size=1, shuffle=False)
@@ -117,7 +73,6 @@ def get(mini=False, fixed_order=False):
         data[7][s] = {'x': [], 'y': []}
         data[8][s] = {'x': [], 'y': []}
         data[9][s] = {'x': [], 'y': []}
-        data[10][s] = {'x': [], 'y': []}
 
         counter = 0
         for image, target in loader:
@@ -161,12 +116,9 @@ def get(mini=False, fixed_order=False):
             elif label == seeds[9]:
                 data[9][s]['x'].append(image)
                 data[9][s]['y'].append(label)
-            elif label == seeds[10]:
-                data[10][s]['x'].append(image)
-                data[10][s]['y'].append(label)
 
     # "Unify" and save
-    for n in range(11):
+    for n in range(10):
         for s in ['train', 'test']:
             data[n][s]['x'] = torch.stack(data[n][s]['x']).view(-1, size[0], size[1], size[2])
             data[n][s]['y'] = torch.LongTensor(np.array(data[n][s]['y'], dtype=int)).view(-1)
@@ -185,6 +137,3 @@ def get(mini=False, fixed_order=False):
     data['ncla'] = n
 
     return data, taskcla, size, labelsize
-
-
-########################################################################################################################
