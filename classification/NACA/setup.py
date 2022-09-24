@@ -5,7 +5,6 @@ import subprocess
 import sys
 
 import numpy as np
-import scipy.io as sio
 import scipy.io.wavfile as wav
 import torch
 from python_speech_features import fbank
