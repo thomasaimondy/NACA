@@ -141,9 +141,9 @@ def local_modulation(neuromodulator_level):
 
 def mem_update(ops, x, mem, spike, old_spike, drop=None, lateral=None):
     if drop is None:
-        mem = mem * spike_args['decay'] * (1. - spike) + ops(x)
+        mem = mem.clone().detach() * spike_args['decay'] * (1. - spike) + ops(x)
     else:
-        mem = mem * spike_args['decay'] * (1. - spike) + drop(ops(x))
+        mem = mem.clone().detach() * spike_args['decay'] * (1. - spike) + drop(ops(x))
 
     if lateral:
         mem += lateral(spike)

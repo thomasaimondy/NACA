@@ -9,13 +9,13 @@ tstart = time.time()
 # Arguments
 parser = argparse.ArgumentParser(description='')
 # Common parameters for all methods
-parser.add_argument('--seed', type=int, default=0)
+parser.add_argument('--seed', type=int, default=1)
 parser.add_argument('--mini', action='store_true', help='Use the mini dataset')
 parser.add_argument('--experiment', default='mnist_classIL', type=str, required=False, choices=['mnist_classIL', 'cifar_classIL', 'gesture_classIL', 'alphabet_classIL', 'mathgreek_classIL'])
-parser.add_argument('--approach', default='naca', type=str, required=False, choices=['sgd', 'ewc', 'naca', 'sgdsnn', 'ewcsnn', 'nacasnn'])
+parser.add_argument('--approach', default='nacasnn', type=str, required=False, choices=['sgd', 'ewc', 'naca', 'sgdsnn', 'ewcsnn', 'nacasnn'])
 parser.add_argument('--output', default='', type=str, required=False)
 parser.add_argument('--nepochs', default=100, type=int, required=False)
-parser.add_argument('--lr', default=5e-5, type=float, required=False) # 5e-4 is the best parameters for nacasnn in MNIST dataset
+parser.add_argument('--lr', default=5e-4, type=float, required=False) # 5e-4 is the best parameters for nacasnn in MNIST dataset
 parser.add_argument('--lr_factor', default=1, type=float, required=False)
 parser.add_argument('--parameter', type=str, default='')
 parser.add_argument('--gpu', type=str, default='0', help='Number of used gpu')
@@ -29,7 +29,7 @@ parser.add_argument('--thresh', type=float, default=0.5, help='Threshold of lif 
 parser.add_argument('--lens', type=float, default=0.2, help='V_window in pseudo-BP')
 parser.add_argument('--decay', type=float, default=0.2, help='Decay time constant for lif neuron')
 parser.add_argument('--spike_windows', type=int, default=20)
-# Parameters for NACA
+# Parameters for ANNs
 parser.add_argument('--bias', type=float, default=None, help='Between the maximum and minimum input value')
 parser.add_argument('--delta_bias', type=float, default=0.2, help='Avoid the zero during training') # 0.2 is the best parameter for naca in MNIST dataset
 parser.add_argument('--lambda_inv', type=int, default=0.5)
