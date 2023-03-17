@@ -11,7 +11,7 @@ delta_bias = {
     "cifar_classIL": 0.1,
     "gesture_classIL": 0.2,
     "alphabet_classIL": 0.2,
-    "mathgreek_classIL": 0.2
+    "mathgreek_classIL": None
 }
 
 bias = {

@@ -9,7 +9,7 @@ tstart = time.time()
 # Arguments
 parser = argparse.ArgumentParser(description='')
 # Common parameters for all methods
-parser.add_argument('--seed', type=int, default=0)
+parser.add_argument('--seed', type=int, default=1)
 parser.add_argument('--mini', action='store_true', help='Use the mini dataset')
 parser.add_argument('--experiment', default='mnist_classIL', type=str, required=False, choices=['mnist_classIL', 'cifar_classIL', 'gesture_classIL', 'alphabet_classIL', 'mathgreek_classIL'])
 parser.add_argument('--approach', default='nacasnn', type=str, required=False, choices=['sgd', 'ewc', 'naca', 'sgdsnn', 'ewcsnn', 'nacasnn'])
@@ -35,8 +35,6 @@ parser.add_argument('--theta_max', type=int, default=1.2)
 parser.add_argument('--distribution', type=str, default='uniform', required=False, choices=['uniform', 'normal', 'beta'])
 args = parser.parse_args()
 
-if args.delta_bias is not None:
-    args.bias = None
 utils.args = args
 os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 
