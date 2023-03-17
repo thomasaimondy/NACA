@@ -110,10 +110,10 @@ class SpikeLinear(torch.nn.Module):
             u_mask = torch.mean(input_, 0, False)
             u_mask = F.interpolate(u_mask.unsqueeze(0).unsqueeze(0), size=[self.out_features])
             u_mask = u_mask.squeeze(0)
-            if utils.args.bias is not None:
-                bias = utils.args.bias  # bias is the threshold, u_mask may be zeros
+            if utils.bias[utils.args.experiment] is not None:
+                bias = utils.bias[utils.args.experiment]  # bias is the threshold, u_mask may be zeros
             else:
-                bias = u_mask.max() - utils.args.delta_bias  # ensure the u_mask is not zeros
+                bias = u_mask.max() - utils.delta_bias[utils.args.experiment]  # ensure the u_mask is not zeros
             u_mask = torch.sigmoid(1000 * (u_mask - bias))
             self.spike = self.spike * u_mask.expand_as(self.spike)
         self.sumspike += self.spike

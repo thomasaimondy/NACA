@@ -87,10 +87,10 @@ class Linear(torch.nn.Module):
             u_mask = torch.mean(self.input_, 0, False)
             u_mask = F.interpolate(u_mask.unsqueeze(0).unsqueeze(0), size=[self.out_features])
             u_mask = u_mask.squeeze(0)
-            if utils.args.bias is not None:
-                bias = utils.args.bias
+            if utils.bias[utils.args.experiment] is not None:
+                bias = utils.bias[utils.args.experiment]
             else:
-                bias = u_mask.max() - utils.args.delta_bias
+                bias = u_mask.max() - utils.delta_bias[utils.args.experiment]
             u_mask = torch.sigmoid(1000 * (u_mask - bias))
             u = u * u_mask.expand_as(u)
         if y is not None:

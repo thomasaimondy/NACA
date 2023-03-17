@@ -6,6 +6,22 @@ from tqdm import tqdm
 args = None
 epoch = []
 
+delta_bias = {
+    "mnist_classIL": 0.2,
+    "cifar_classIL": 0.1,
+    "gesture_classIL": 0.2,
+    "alphabet_classIL": 0.2,
+    "mathgreek_classIL": 0.2
+}
+
+bias = {
+    "mnist_classIL": None,
+    "cifar_classIL": None,
+    "gesture_classIL": None,
+    "alphabet_classIL": None,
+    "mathgreek_classIL": 0.8
+}
+
 
 def print_model_report(model):
     print('-' * 100)

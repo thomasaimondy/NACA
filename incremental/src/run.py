@@ -9,7 +9,7 @@ tstart = time.time()
 # Arguments
 parser = argparse.ArgumentParser(description='')
 # Common parameters for all methods
-parser.add_argument('--seed', type=int, default=1)
+parser.add_argument('--seed', type=int, default=0)
 parser.add_argument('--mini', action='store_true', help='Use the mini dataset')
 parser.add_argument('--experiment', default='mnist_classIL', type=str, required=False, choices=['mnist_classIL', 'cifar_classIL', 'gesture_classIL', 'alphabet_classIL', 'mathgreek_classIL'])
 parser.add_argument('--approach', default='nacasnn', type=str, required=False, choices=['sgd', 'ewc', 'naca', 'sgdsnn', 'ewcsnn', 'nacasnn'])
@@ -29,9 +29,7 @@ parser.add_argument('--thresh', type=float, default=0.5, help='Threshold of lif 
 parser.add_argument('--lens', type=float, default=0.2, help='V_window in pseudo-BP')
 parser.add_argument('--decay', type=float, default=0.2, help='Decay time constant for lif neuron')
 parser.add_argument('--spike_windows', type=int, default=20)
-# Parameters for ANNs
-parser.add_argument('--bias', type=float, default=None, help='Between the maximum and minimum input value')
-parser.add_argument('--delta_bias', type=float, default=0.2, help='Avoid the zero during training') # 0.2 is the best parameter for naca in MNIST dataset
+# Parameters for NACA
 parser.add_argument('--lambda_inv', type=int, default=0.5)
 parser.add_argument('--theta_max', type=int, default=1.2)
 parser.add_argument('--distribution', type=str, default='uniform', required=False, choices=['uniform', 'normal', 'beta'])
@@ -55,7 +53,7 @@ else:
     rootpath = rootpath + '_' + args.output
     if not os.path.exists(rootpath):
         os.makedirs(rootpath)
-    args.output = rootpath + '/' + timeclock + '_nhid' + str(args.nhid) + '_nalyers' + str(args.nlayers) + str(args.nlayers) + '_bias' + str(args.bias) + '_delta_bias' + str(args.delta_bias)
+    args.output = rootpath + '/' + timeclock + '_nhid' + str(args.nhid) + '_nalyers' + str(args.nlayers)
 print('=' * 100)
 print('Arguments =')
 for arg in vars(args):
